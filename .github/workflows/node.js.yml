@@ -12,6 +12,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: creche-app
 
     steps:
     - name: Checkout code
@@ -23,10 +26,10 @@ jobs:
         node-version: '20'
 
     - name: Install dependencies
-      run: npm install
+      run: npm install --legacy-peer-deps
 
-    - name: Run TypeScript check
+    - name: TypeScript check
       run: npx tsc --noEmit
 
-    - name: Run Expo build test
+    - name: Expo doctor
       run: npx expo doctor
