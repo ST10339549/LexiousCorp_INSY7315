@@ -1,7 +1,6 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/creche-app"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 5
