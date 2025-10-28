@@ -32,4 +32,4 @@ jobs:
       run: npx tsc --noEmit
 
     - name: Expo doctor
-      run: npx expo doctor
+      run: npx expo-doctor
