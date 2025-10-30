@@ -7,9 +7,10 @@ type AdminDashboardProps = {
     userName?: string;
     onLogout?: () => void;
     onNavigateToAttendance?: () => void;
+    onNavigateToAddChild?: () => void;
 };
 
-export default function AdminDashboard({ userName, onLogout, onNavigateToAttendance }: AdminDashboardProps) {
+export default function AdminDashboard({ userName, onLogout, onNavigateToAttendance, onNavigateToAddChild }: AdminDashboardProps) {
     const handleLogout = async () => {
         try {
             await signOut(auth);
@@ -57,6 +58,22 @@ export default function AdminDashboard({ userName, onLogout, onNavigateToAttenda
                             <Text fontSize="xl">📋</Text>
                             <Text color="white" fontSize="md" fontWeight="500">
                                 Daily Attendance
+                            </Text>
+                        </HStack>
+                    </Button>
+
+                    {/* Add Child Button */}
+                    <Button
+                        bg="green.600"
+                        rounded="xl"
+                        py={4}
+                        onPress={() => onNavigateToAddChild && onNavigateToAddChild()}
+                        _pressed={{ bg: "green.700" }}
+                    >
+                        <HStack space={3} alignItems="center">
+                            <Text fontSize="xl">👶</Text>
+                            <Text color="white" fontSize="md" fontWeight="500">
+                                Add Child
                             </Text>
                         </HStack>
                     </Button>
