@@ -128,7 +128,7 @@ export default function RegisterScreen({
                   rounded="lg"
                   value={value}
                   onChangeText={onChange}
-                  placeholder="Melissa Pillay"
+                  placeholder="John Doe"
                   placeholderTextColor="#666"
                   _focus={{
                     borderColor: "brand.500",
