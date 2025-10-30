@@ -58,14 +58,25 @@ export default function RegisterScreen({
   });
 
   async function submit(data: RegisterFormData) {
-    if (onRegister) {
-      await onRegister({
-        fullName: data.fullName,
-        email: data.email,
-        password: data.password,
-      });
-    } else {
-      console.log("Register pressed", data);
+    console.log("Submit function called with data:", data);
+    try {
+      if (onRegister) {
+        console.log("Calling onRegister...");
+        await onRegister({
+          fullName: data.fullName,
+          email: data.email,
+          password: data.password,
+        });
+        console.log("onRegister completed successfully");
+      } else {
+        console.log("No onRegister prop provided");
+        console.log("Register pressed", data);
+      }
+    } catch (error) {
+      console.error("Error in submit function:", error);
+      if (error instanceof Error) {
+        alert("Error: " + error.message);
+      }
     }
   }
 
