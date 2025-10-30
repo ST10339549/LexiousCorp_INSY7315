@@ -185,7 +185,8 @@ export default function App() {
         />
       ) : (
         <ParentHome 
-          userName={userName} 
+          userName={userName}
+          userId={userId}
           onLogout={handleLogout}
           onNavigateToAddChild={handleNavigateToAddChild}
           onNavigateToMyChildren={handleNavigateToParentChildren}
