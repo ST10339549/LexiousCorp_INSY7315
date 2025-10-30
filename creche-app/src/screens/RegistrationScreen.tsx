@@ -18,10 +18,31 @@ import { auth, db } from "../firebase";
 
 const registerSchema = z
   .object({
-    fullName: z.string().min(2, "Enter your full name"),
-    email: z.string().email("Use a valid email"),
-    password: z.string().min(6, "Min 6 characters"),
-    confirm: z.string().min(6, "Confirm your password"),
+    fullName: z
+      .string()
+      .min(2, "Full name must be at least 2 characters")
+      .max(50, "Full name must be less than 50 characters")
+      .regex(/^[a-zA-Z\s]+$/, "Full name can only contain letters and spaces")
+      .refine((val) => val.trim().length > 0, {
+        message: "Full name cannot be empty",
+      }),
+    email: z
+      .string()
+      .min(1, "Email is required")
+      .email("Please enter a valid email address")
+      .toLowerCase()
+      .refine((val) => val.trim().length > 0, {
+        message: "Email cannot be empty",
+      }),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(100, "Password must be less than 100 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number")
+      .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+    confirm: z.string().min(1, "Please confirm your password"),
   })
   .refine((data) => data.password === data.confirm, {
     message: "Passwords do not match",
