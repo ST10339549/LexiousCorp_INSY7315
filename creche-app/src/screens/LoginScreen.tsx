@@ -12,10 +12,22 @@ import {
   Spinner,
   Pressable,
 } from "native-base";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
 
 const loginSchema = z.object({
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "Min 6 characters"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address")
+    .toLowerCase()
+    .refine((val) => val.trim().length > 0, {
+      message: "Email cannot be empty",
+    }),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(8, "Password must be at least 8 characters"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -40,10 +52,21 @@ export default function LoginScreen({
   });
 
   async function submit(data: LoginFormData) {
-    if (onLogin) {
-      await onLogin(data.email, data.password);
-    } else {
-      console.log("Login pressed", data);
+    console.log("Login submit function called");
+    try {
+      if (onLogin) {
+        console.log("Calling onLogin with email:", data.email);
+        await onLogin(data.email, data.password);
+        console.log("onLogin completed successfully");
+      } else {
+        console.log("No onLogin prop provided");
+        console.log("Login pressed", data);
+      }
+    } catch (error) {
+      console.error("Error in login submit function:", error);
+      if (error instanceof Error) {
+        alert("Login Error: " + error.message);
+      }
     }
   }
 
@@ -52,7 +75,7 @@ export default function LoginScreen({
       <Box bg="bg.800" w="100%" maxW="400px" p={6} rounded="2xl">
         <VStack space={4}>
           <Text color="white" fontSize="xl" fontWeight="600">
-            Welcome back 👋
+            Welcome back, please sign in
           </Text>
           <Text color="coolGray.400" fontSize="sm">
             Log in to Little Lemon Creche
@@ -78,6 +101,10 @@ export default function LoginScreen({
                   placeholderTextColor="#666"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  _focus={{
+                    borderColor: "brand.500",
+                    borderWidth: 2,
+                  }}
                 />
               )}
             />
@@ -107,6 +134,10 @@ export default function LoginScreen({
                   placeholder="••••••••"
                   placeholderTextColor="#666"
                   secureTextEntry
+                  _focus={{
+                    borderColor: "brand.500",
+                    borderWidth: 2,
+                  }}
                 />
               )}
             />
@@ -148,3 +179,18 @@ export default function LoginScreen({
     </Box>
   );
 }
+
+async function handleLogin(email: string, password: string) {
+  try {
+    const userCred = await signInWithEmailAndPassword(auth, email, password);
+    alert("Welcome back, " + userCred.user.displayName);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      alert("Login failed: " + err.message);
+    } else {
+      alert("An unknown error occurred.");
+    }
+  }
+}
+
+//<LoginScreen onLogin={handleLogin} onGoRegister={() => setMode("register")} />

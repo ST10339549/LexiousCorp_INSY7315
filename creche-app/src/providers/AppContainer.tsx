@@ -3,6 +3,11 @@ import { NativeBaseProvider, extendTheme } from "native-base";
 import { SafeAreaView } from "react-native";
 
 const theme = extendTheme({
+  components: {
+    Box: {
+      baseStyle: {},
+    },
+  },
   colors: {
     brand: {
       500: "#3a67ff", // primary blue to match the welcome screen button
