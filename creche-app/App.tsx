@@ -3,7 +3,8 @@ import AppContainer from "./src/providers/AppContainer";
 import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegistrationScreen";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "./src/firebase";
+import { auth, db } from "./src/firebase";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 async function handleLogin(email: string, password: string) {
   try {
@@ -31,6 +32,18 @@ async function handleRegister(fullName: string, email: string, password: string)
       displayName: fullName,
     });
     console.log("Profile updated successfully");
+    
+    // Create user document in Firestore
+    console.log("Creating user document in Firestore...");
+    await setDoc(doc(db, "users", userCred.user.uid), {
+      uid: userCred.user.uid,
+      name: fullName,
+      email: email.toLowerCase(),
+      role: "parent", // Default role - can be changed to "admin" manually in Firebase Console
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    console.log("User document created in Firestore");
     
     alert("Account created successfully! Welcome " + fullName);
     return true;
