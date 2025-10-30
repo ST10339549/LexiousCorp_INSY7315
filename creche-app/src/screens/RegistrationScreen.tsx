@@ -98,6 +98,10 @@ export default function RegisterScreen({
                   onChangeText={onChange}
                   placeholder="Melissa Pillay"
                   placeholderTextColor="#666"
+                  _focus={{
+                    borderColor: "brand.500",
+                    borderWidth: 2,
+                  }}
                 />
               )}
             />
@@ -128,6 +132,10 @@ export default function RegisterScreen({
                   placeholderTextColor="#666"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  _focus={{
+                    borderColor: "brand.500",
+                    borderWidth: 2,
+                  }}
                 />
               )}
             />
@@ -157,6 +165,10 @@ export default function RegisterScreen({
                   placeholder="••••••••"
                   placeholderTextColor="#666"
                   secureTextEntry
+                  _focus={{
+                    borderColor: "brand.500",
+                    borderWidth: 2,
+                  }}
                 />
               )}
             />
@@ -186,6 +198,10 @@ export default function RegisterScreen({
                   placeholder="••••••••"
                   placeholderTextColor="#666"
                   secureTextEntry
+                  _focus={{
+                    borderColor: "brand.500",
+                    borderWidth: 2,
+                  }}
                 />
               )}
             />

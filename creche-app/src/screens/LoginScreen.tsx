@@ -54,7 +54,7 @@ export default function LoginScreen({
       <Box bg="bg.800" w="100%" maxW="400px" p={6} rounded="2xl">
         <VStack space={4}>
           <Text color="white" fontSize="xl" fontWeight="600">
-            Welcome back 👋
+            Welcome back, please sign in
           </Text>
           <Text color="coolGray.400" fontSize="sm">
             Log in to Little Lemon Creche
@@ -80,6 +80,10 @@ export default function LoginScreen({
                   placeholderTextColor="#666"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  _focus={{
+                    borderColor: "brand.500",
+                    borderWidth: 2,
+                  }}
                 />
               )}
             />
@@ -109,6 +113,10 @@ export default function LoginScreen({
                   placeholder="••••••••"
                   placeholderTextColor="#666"
                   secureTextEntry
+                  _focus={{
+                    borderColor: "brand.500",
+                    borderWidth: 2,
+                  }}
                 />
               )}
             />

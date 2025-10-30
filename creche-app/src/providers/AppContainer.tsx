@@ -5,9 +5,7 @@ import { SafeAreaView } from "react-native";
 const theme = extendTheme({
   components: {
     Box: {
-      baseStyle: {
-        outlineWidth: undefined,
-      },
+      baseStyle: {},
     },
   },
   colors: {
