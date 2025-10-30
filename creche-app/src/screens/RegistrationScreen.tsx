@@ -12,6 +12,9 @@ import {
   Spinner,
   Pressable,
 } from "native-base";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { setDoc, doc } from "firebase/firestore";
+import { auth, db } from "../firebase";
 
 const registerSchema = z
   .object({
@@ -224,3 +227,33 @@ export default function RegisterScreen({
     </Box>
   );
 }
+
+async function handleRegister({
+  fullName,
+  email,
+  password,
+}: {
+  fullName: string;
+  email: string;
+  password: string;
+}) {
+  try {
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(userCred.user, { displayName: fullName });
+    await setDoc(doc(db, "users", userCred.user.uid), {
+      name: fullName,
+      email: email,
+      role: "parent", // or admin
+      createdAt: new Date().toISOString(),
+    });
+    alert("Account created successfully!");
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      alert("Registration failed: " + err.message);
+    } else {
+      alert("An unknown error occurred.");
+    }
+  }
+}
+
+// <RegisterScreen onRegister={handleRegister} onGoLogin={() => setMode("login")} />

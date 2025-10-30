@@ -12,6 +12,8 @@ import {
   Spinner,
   Pressable,
 } from "native-base";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -148,3 +150,18 @@ export default function LoginScreen({
     </Box>
   );
 }
+
+async function handleLogin(email: string, password: string) {
+  try {
+    const userCred = await signInWithEmailAndPassword(auth, email, password);
+    alert("Welcome back, " + userCred.user.displayName);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      alert("Login failed: " + err.message);
+    } else {
+      alert("An unknown error occurred.");
+    }
+  }
+}
+
+//<LoginScreen onLogin={handleLogin} onGoRegister={() => setMode("register")} />
