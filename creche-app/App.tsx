@@ -4,6 +4,7 @@ import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegistrationScreen";
 import AdminDashboard from "./src/screens/AdminDashboard";
 import ParentHome from "./src/screens/ParentHome";
+import AttendanceScreen from "./src/screens/AttendanceScreen";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "./src/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -91,13 +92,23 @@ async function handleRegister(fullName: string, email: string, password: string)
 }
 
 export default function App() {
-  const [mode, setMode] = useState<"login" | "register" | "admin" | "parent">("login");
+  const [mode, setMode] = useState<"login" | "register" | "admin" | "parent" | "attendance">("login");
   const [userName, setUserName] = useState<string>("");
 
   const handleLogout = () => {
     console.log("User logged out");
     setMode("login");
     setUserName("");
+  };
+
+  const handleNavigateToAttendance = () => {
+    console.log("Navigating to Attendance Screen");
+    setMode("attendance");
+  };
+
+  const handleBackToAdminDashboard = () => {
+    console.log("Navigating back to Admin Dashboard");
+    setMode("admin");
   };
 
   return (
@@ -127,7 +138,13 @@ export default function App() {
           onGoLogin={() => setMode("login")}
         />
       ) : mode === "admin" ? (
-        <AdminDashboard userName={userName} onLogout={handleLogout} />
+        <AdminDashboard 
+          userName={userName} 
+          onLogout={handleLogout}
+          onNavigateToAttendance={handleNavigateToAttendance}
+        />
+      ) : mode === "attendance" ? (
+        <AttendanceScreen onBack={handleBackToAdminDashboard} />
       ) : (
         <ParentHome userName={userName} onLogout={handleLogout} />
       )}
