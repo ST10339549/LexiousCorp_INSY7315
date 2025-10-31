@@ -6,9 +6,11 @@ import { auth } from "../firebase";
 type AdminDashboardProps = {
     userName?: string;
     onLogout?: () => void;
+    onNavigateToAttendance?: () => void;
+    onNavigateToAddChild?: () => void;
 };
 
-export default function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
+export default function AdminDashboard({ userName, onLogout, onNavigateToAttendance, onNavigateToAddChild }: AdminDashboardProps) {
     const handleLogout = async () => {
         try {
             await signOut(auth);
@@ -42,11 +44,47 @@ export default function AdminDashboard({ userName, onLogout }: AdminDashboardPro
                     </Button>
                 </HStack>
 
-                <Box bg="brand.500" p={4} rounded="xl">
-                    <Text color="white" textAlign="center" fontWeight="500">
-                        Admin Dashboard - Features coming soon!
-                    </Text>
-                </Box>
+                {/* Dashboard Actions */}
+                <VStack space={4}>
+                    {/* Daily Attendance Button */}
+                    <Button
+                        bg="brand.500"
+                        rounded="xl"
+                        py={4}
+                        onPress={() => onNavigateToAttendance && onNavigateToAttendance()}
+                        _pressed={{ bg: "brand.600" }}
+                    >
+                        <HStack space={3} alignItems="center">
+                            <Text fontSize="xl">📋</Text>
+                            <Text color="white" fontSize="md" fontWeight="500">
+                                Daily Attendance
+                            </Text>
+                        </HStack>
+                    </Button>
+
+                    {/* Add Child Button */}
+                    <Button
+                        bg="green.600"
+                        rounded="xl"
+                        py={4}
+                        onPress={() => onNavigateToAddChild && onNavigateToAddChild()}
+                        _pressed={{ bg: "green.700" }}
+                    >
+                        <HStack space={3} alignItems="center">
+                            <Text fontSize="xl">👶</Text>
+                            <Text color="white" fontSize="md" fontWeight="500">
+                                Add Child
+                            </Text>
+                        </HStack>
+                    </Button>
+
+                    {/* Placeholder for future features */}
+                    <Box bg="coolGray.800" p={4} rounded="xl" borderWidth={1} borderColor="coolGray.700">
+                        <Text color="coolGray.400" textAlign="center" fontWeight="500">
+                            More admin features coming soon!
+                        </Text>
+                    </Box>
+                </VStack>
             </VStack>
         </Box>
     );
