@@ -10,6 +10,7 @@ import ParentChildren from "./src/screens/ParentChildren";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "./src/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { registerForPushNotifications } from "./src/services/notifications";
 
 async function handleLogin(email: string, password: string): Promise<{ role: string; userName: string; userId: string } | null> {
   try {
@@ -28,6 +29,19 @@ async function handleLogin(email: string, password: string): Promise<{ role: str
       const userName = userData.name || userCred.user.displayName || userCred.user.email || "User";
 
       console.log("User role:", role);
+
+      // Register for push notifications after successful login
+      console.log("Registering for push notifications...");
+      registerForPushNotifications(uid).then((token) => {
+        if (token) {
+          console.log("✅ Push notifications registered successfully");
+        } else {
+          console.log("⚠️ Push notification registration skipped (likely emulator/simulator)");
+        }
+      }).catch((error) => {
+        console.error("❌ Push notification registration error:", error);
+        // Don't block login if notification registration fails
+      });
 
       if (role === "admin") {
         console.log("Navigating to Admin Dashboard");
@@ -162,7 +176,8 @@ export default function App() {
         />
       ) : mode === "admin" ? (
         <AdminDashboard 
-          userName={userName} 
+          userName={userName}
+          userId={userId}
           onLogout={handleLogout}
           onNavigateToAttendance={handleNavigateToAttendance}
           onNavigateToAddChild={handleNavigateToAddChild}
