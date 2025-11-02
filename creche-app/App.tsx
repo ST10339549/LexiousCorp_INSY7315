@@ -4,11 +4,13 @@ import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegistrationScreen";
 import AdminDashboard from "./src/screens/AdminDashboard";
 import StaffDashboard from "./src/screens/StaffDashboard";
+import StaffMyClassScreen from "./src/screens/StaffMyClassScreen";
 import ParentHome from "./src/screens/ParentHome";
 import AttendanceScreen from "./src/screens/AttendanceScreen";
 import AddChildScreen from "./src/screens/AddChildScreen";
 import ParentChildren from "./src/screens/ParentChildren";
 import ManageUsersScreen from "./src/screens/ManageUsersScreen";
+import AssignChildrenScreen from "./src/screens/AssignChildrenScreen";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "./src/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -114,7 +116,7 @@ async function handleRegister(fullName: string, email: string, password: string)
 }
 
 export default function App() {
-  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers">("login");
+  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass">("login");
   const [userName, setUserName] = useState<string>("");
   const [userRole, setUserRole] = useState<Role>("parent");
   const [userId, setUserId] = useState<string>("");
@@ -145,6 +147,16 @@ export default function App() {
   const handleNavigateToManageUsers = () => {
     console.log("Navigating to Manage Users Screen");
     setMode("manageUsers");
+  };
+
+  const handleNavigateToAssignChildren = () => {
+    console.log("Navigating to Assign Children Screen");
+    setMode("assignChildren");
+  };
+
+  const handleNavigateToStaffMyClass = () => {
+    console.log("Navigating to Staff My Class Screen");
+    setMode("staffMyClass");
   };
 
   const handleBackToAdminDashboard = () => {
@@ -204,6 +216,7 @@ export default function App() {
           onNavigateToAttendance={handleNavigateToAttendance}
           onNavigateToAddChild={handleNavigateToAddChild}
           onNavigateToManageUsers={handleNavigateToManageUsers}
+          onNavigateToAssignChildren={handleNavigateToAssignChildren}
         />
       ) : mode === "staff" ? (
         <StaffDashboard
@@ -211,6 +224,7 @@ export default function App() {
           userId={userId}
           onLogout={handleLogout}
           onNavigateToAttendance={handleNavigateToAttendance}
+          onNavigateToMyClass={handleNavigateToStaffMyClass}
         />
       ) : mode === "attendance" ? (
         <AttendanceScreen onBack={() => {
@@ -256,6 +270,17 @@ export default function App() {
         <ManageUsersScreen
           currentUserId={userId}
           onBack={handleBackToAdminDashboard}
+        />
+      ) : mode === "assignChildren" ? (
+        <AssignChildrenScreen
+          currentAdminId={userId}
+          onBack={handleBackToAdminDashboard}
+        />
+      ) : mode === "staffMyClass" ? (
+        <StaffMyClassScreen
+          staffId={userId}
+          staffName={userName}
+          onBack={handleBackToStaffDashboard}
         />
       ) : (
         <ParentHome 

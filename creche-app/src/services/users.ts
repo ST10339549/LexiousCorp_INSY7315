@@ -3,6 +3,9 @@ import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs } from "fireb
 import { db } from "../firebase";
 import { Role, User } from "../types/user";
 
+// Re-export User type for convenience
+export type { User, Role };
+
 /**
  * Input data for creating a user document
  */

@@ -12,9 +12,10 @@ type AdminDashboardProps = {
     onNavigateToAttendance?: () => void;
     onNavigateToAddChild?: () => void;
     onNavigateToManageUsers?: () => void;
+    onNavigateToAssignChildren?: () => void;
 };
 
-export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers }: AdminDashboardProps) {
+export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren }: AdminDashboardProps) {
     const [sendingNotification, setSendingNotification] = useState(false);
     const toast = useToast();
 
@@ -160,6 +161,22 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
                             <Text fontSize="xl">📋</Text>
                             <Text color="white" fontSize="md" fontWeight="500">
                                 Daily Attendance
+                            </Text>
+                        </HStack>
+                    </Button>
+
+                    {/* Assign Children to Teachers Button */}
+                    <Button
+                        bg="teal.600"
+                        rounded="xl"
+                        py={4}
+                        onPress={() => onNavigateToAssignChildren && onNavigateToAssignChildren()}
+                        _pressed={{ bg: "teal.700" }}
+                    >
+                        <HStack space={3} alignItems="center">
+                            <Text fontSize="xl">🎓</Text>
+                            <Text color="white" fontSize="md" fontWeight="500">
+                                Assign Children to Teachers
                             </Text>
                         </HStack>
                     </Button>
