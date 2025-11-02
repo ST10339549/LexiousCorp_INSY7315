@@ -23,6 +23,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { addChildUnique, checkChildExists } from "../services/children";
 import { MaterialIcons } from "@expo/vector-icons";
+import { Role } from "../types/user";
 
 type Parent = {
   uid: string;
@@ -31,7 +32,7 @@ type Parent = {
 };
 
 type AddChildScreenProps = {
-  userRole: "admin" | "parent";
+  userRole: Role;
   userId: string;
   onBack?: () => void;
   onSuccess?: () => void;
@@ -77,7 +78,7 @@ export default function AddChildScreen({
     if (userRole === "admin") {
       fetchParents();
     } else {
-      // If parent, auto-select their own ID
+      // If parent or staff, auto-select their own ID
       setSelectedParentId(userId);
     }
   }, [userRole, userId]);

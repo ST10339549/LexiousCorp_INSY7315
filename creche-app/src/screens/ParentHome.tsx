@@ -16,6 +16,7 @@ import {
 import { signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { listenChildrenByParent, Child } from "../services/children";
+import { subscribeAnnouncements, Announcement } from "../services/announcements";
 import { MaterialIcons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
 import { sendTestNotification } from "../services/notifications";
@@ -26,6 +27,7 @@ type ParentHomeProps = {
   onLogout?: () => void;
   onNavigateToAddChild?: () => void;
   onNavigateToMyChildren?: () => void;
+  onNavigateToAnnouncements?: () => void;
 };
 
 export default function ParentHome({
@@ -33,10 +35,13 @@ export default function ParentHome({
   userId,
   onLogout,
   onNavigateToAddChild,
+  onNavigateToAnnouncements,
 }: ParentHomeProps) {
   const [children, setChildren] = useState<Child[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
   const [sendingNotification, setSendingNotification] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
   const toast = useToast();
 
   const handleLogout = async () => {
@@ -157,6 +162,30 @@ export default function ParentHome({
   }, [userId]);
 
   /**
+   * Subscribe to announcements updates
+   */
+  useEffect(() => {
+    console.log("[ParentHome] Setting up announcements subscription");
+
+    const unsubscribe = subscribeAnnouncements(
+      (updatedAnnouncements) => {
+        console.log(`[ParentHome] Received ${updatedAnnouncements.length} announcements`);
+        // Only show latest 3 announcements on home screen
+        setAnnouncements(updatedAnnouncements.slice(0, 3));
+        setLoadingAnnouncements(false);
+      },
+      3, // Limit to 3 most recent announcements
+      "parents" // Filter for parent-relevant announcements
+    );
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log("[ParentHome] Cleaning up announcements subscription");
+      unsubscribe();
+    };
+  }, []);
+
+  /**
    * Calculate child's age from date of birth
    */
   const calculateAge = (dob: string): number => {
@@ -173,6 +202,35 @@ export default function ParentHome({
     }
 
     return age;
+  };
+
+  /**
+   * Format timestamp for display
+   */
+  const formatDate = (timestamp: any): string => {
+    if (!timestamp) return "Unknown date";
+
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
+      if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+      if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Unknown date";
+    }
   };
 
   /**
@@ -315,6 +373,84 @@ export default function ParentHome({
                 </Text>
               </HStack>
             </Button>
+          </VStack>
+
+          {/* Announcements Section */}
+          <VStack space={4} mt={2}>
+            <HStack justifyContent="space-between" alignItems="center">
+              <Heading color="white" size="lg">
+                📢 Announcements
+              </Heading>
+              {announcements.length > 0 && onNavigateToAnnouncements && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onPress={onNavigateToAnnouncements}
+                  _text={{ color: "brand.500", fontWeight: "600" }}
+                >
+                  View All
+                </Button>
+              )}
+            </HStack>
+
+            {/* Announcements List */}
+            {loadingAnnouncements ? (
+              <Box py={6} alignItems="center">
+                <Spinner size="sm" color="brand.500" />
+              </Box>
+            ) : announcements.length === 0 ? (
+              <Box
+                bg="coolGray.800"
+                p={4}
+                rounded="xl"
+                borderWidth={1}
+                borderColor="coolGray.700"
+                alignItems="center"
+              >
+                <Text fontSize="2xl" mb={1}>
+                  📭
+                </Text>
+                <Text color="coolGray.500" fontSize="sm" textAlign="center">
+                  No announcements at this time
+                </Text>
+              </Box>
+            ) : (
+              <VStack space={3}>
+                {announcements.map((announcement) => (
+                  <Box
+                    key={announcement.id}
+                    bg="coolGray.800"
+                    p={4}
+                    rounded="xl"
+                    borderWidth={1}
+                    borderColor="coolGray.700"
+                  >
+                    <VStack space={2}>
+                      <HStack justifyContent="space-between" alignItems="flex-start">
+                        <Text
+                          color="white"
+                          fontSize="md"
+                          fontWeight="bold"
+                          flex={1}
+                        >
+                          {announcement.title}
+                        </Text>
+                        <Text color="coolGray.500" fontSize="xs" ml={2}>
+                          {formatDate(announcement.createdAt)}
+                        </Text>
+                      </HStack>
+                      <Text
+                        color="coolGray.300"
+                        fontSize="sm"
+                        numberOfLines={2}
+                      >
+                        {announcement.body}
+                      </Text>
+                    </VStack>
+                  </Box>
+                ))}
+              </VStack>
+            )}
           </VStack>
 
           {/* My Children Section */}

@@ -3,14 +3,22 @@ import AppContainer from "./src/providers/AppContainer";
 import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegistrationScreen";
 import AdminDashboard from "./src/screens/AdminDashboard";
+import StaffDashboard from "./src/screens/StaffDashboard";
+import StaffMyClassScreen from "./src/screens/StaffMyClassScreen";
 import ParentHome from "./src/screens/ParentHome";
 import AttendanceScreen from "./src/screens/AttendanceScreen";
 import AddChildScreen from "./src/screens/AddChildScreen";
 import ParentChildren from "./src/screens/ParentChildren";
+import ManageUsersScreen from "./src/screens/ManageUsersScreen";
+import AssignChildrenScreen from "./src/screens/AssignChildrenScreen";
+import CreateAnnouncementScreen from "./src/screens/CreateAnnouncementScreen";
+import AnnouncementsScreen from "./src/screens/AnnouncementsScreen";
+import StaffAnnouncementsScreen from "./src/screens/StaffAnnouncementsScreen";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "./src/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { registerForPushNotifications } from "./src/services/notifications";
+import { Role } from "./src/types/user";
 
 async function handleLogin(email: string, password: string): Promise<{ role: string; userName: string; userId: string } | null> {
   try {
@@ -25,7 +33,7 @@ async function handleLogin(email: string, password: string): Promise<{ role: str
 
     if (userDoc.exists()) {
       const userData = userDoc.data();
-      const role = userData.role;
+      const role = userData.role as Role;
       const userName = userData.name || userCred.user.displayName || userCred.user.email || "User";
 
       console.log("User role:", role);
@@ -46,6 +54,9 @@ async function handleLogin(email: string, password: string): Promise<{ role: str
       if (role === "admin") {
         console.log("Navigating to Admin Dashboard");
         return { role: "admin", userName, userId: uid };
+      } else if (role === "staff") {
+        console.log("Navigating to Staff Dashboard");
+        return { role: "staff", userName, userId: uid };
       } else if (role === "parent") {
         console.log("Navigating to Parent Home");
         return { role: "parent", userName, userId: uid };
@@ -88,7 +99,7 @@ async function handleRegister(fullName: string, email: string, password: string)
       uid: userCred.user.uid,
       name: fullName,
       email: email.toLowerCase(),
-      role: "parent", // Default role - can be changed to "admin" manually in Firebase Console
+      role: "parent", // Default role for self-registration - staff and admin roles must be assigned by an admin in Firebase Console
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -108,9 +119,9 @@ async function handleRegister(fullName: string, email: string, password: string)
 }
 
 export default function App() {
-  const [mode, setMode] = useState<"login" | "register" | "admin" | "parent" | "attendance" | "addChild" | "parentChildren">("login");
+  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements">("login");
   const [userName, setUserName] = useState<string>("");
-  const [userRole, setUserRole] = useState<"admin" | "parent">("parent");
+  const [userRole, setUserRole] = useState<Role>("parent");
   const [userId, setUserId] = useState<string>("");
 
   const handleLogout = () => {
@@ -136,9 +147,44 @@ export default function App() {
     setMode("parentChildren");
   };
 
+  const handleNavigateToManageUsers = () => {
+    console.log("Navigating to Manage Users Screen");
+    setMode("manageUsers");
+  };
+
+  const handleNavigateToAssignChildren = () => {
+    console.log("Navigating to Assign Children Screen");
+    setMode("assignChildren");
+  };
+
+  const handleNavigateToStaffMyClass = () => {
+    console.log("Navigating to Staff My Class Screen");
+    setMode("staffMyClass");
+  };
+
+  const handleNavigateToCreateAnnouncement = () => {
+    console.log("Navigating to Create Announcement Screen");
+    setMode("createAnnouncement");
+  };
+
+  const handleNavigateToAnnouncements = () => {
+    console.log("Navigating to Announcements Screen");
+    setMode("announcements");
+  };
+
+  const handleNavigateToStaffAnnouncements = () => {
+    console.log("Navigating to Staff Announcements Screen");
+    setMode("staffAnnouncements");
+  };
+
   const handleBackToAdminDashboard = () => {
     console.log("Navigating back to Admin Dashboard");
     setMode("admin");
+  };
+
+  const handleBackToStaffDashboard = () => {
+    console.log("Navigating back to Staff Dashboard");
+    setMode("staff");
   };
 
   const handleBackToParentHome = () => {
@@ -154,9 +200,15 @@ export default function App() {
             const result = await handleLogin(email, password);
             if (result) {
               setUserName(result.userName);
-              setUserRole(result.role as "admin" | "parent");
+              setUserRole(result.role as Role);
               setUserId(result.userId);
-              setMode(result.role === "admin" ? "admin" : "parent");
+              if (result.role === "admin") {
+                setMode("admin");
+              } else if (result.role === "staff") {
+                setMode("staff");
+              } else {
+                setMode("parent");
+              }
             }
           }}
           onGoRegister={() => setMode("register")}
@@ -181,15 +233,51 @@ export default function App() {
           onLogout={handleLogout}
           onNavigateToAttendance={handleNavigateToAttendance}
           onNavigateToAddChild={handleNavigateToAddChild}
+          onNavigateToManageUsers={handleNavigateToManageUsers}
+          onNavigateToAssignChildren={handleNavigateToAssignChildren}
+          onNavigateToCreateAnnouncement={handleNavigateToCreateAnnouncement}
+        />
+      ) : mode === "staff" ? (
+        <StaffDashboard
+          userName={userName}
+          userId={userId}
+          onLogout={handleLogout}
+          onNavigateToAttendance={handleNavigateToAttendance}
+          onNavigateToMyClass={handleNavigateToStaffMyClass}
+          onNavigateToAnnouncements={handleNavigateToStaffAnnouncements}
         />
       ) : mode === "attendance" ? (
-        <AttendanceScreen onBack={handleBackToAdminDashboard} />
+        <AttendanceScreen onBack={() => {
+          if (userRole === "admin") {
+            handleBackToAdminDashboard();
+          } else if (userRole === "staff") {
+            handleBackToStaffDashboard();
+          } else {
+            handleBackToParentHome();
+          }
+        }} />
       ) : mode === "addChild" ? (
         <AddChildScreen 
           userRole={userRole}
           userId={userId}
-          onBack={userRole === "admin" ? handleBackToAdminDashboard : handleBackToParentHome}
-          onSuccess={userRole === "admin" ? handleBackToAdminDashboard : handleBackToParentHome}
+          onBack={() => {
+            if (userRole === "admin") {
+              handleBackToAdminDashboard();
+            } else if (userRole === "staff") {
+              handleBackToStaffDashboard();
+            } else {
+              handleBackToParentHome();
+            }
+          }}
+          onSuccess={() => {
+            if (userRole === "admin") {
+              handleBackToAdminDashboard();
+            } else if (userRole === "staff") {
+              handleBackToStaffDashboard();
+            } else {
+              handleBackToParentHome();
+            }
+          }}
         />
       ) : mode === "parentChildren" ? (
         <ParentChildren
@@ -198,6 +286,35 @@ export default function App() {
           onAddChild={handleNavigateToAddChild}
           onBack={handleBackToParentHome}
         />
+      ) : mode === "manageUsers" ? (
+        <ManageUsersScreen
+          currentUserId={userId}
+          onBack={handleBackToAdminDashboard}
+        />
+      ) : mode === "assignChildren" ? (
+        <AssignChildrenScreen
+          currentAdminId={userId}
+          onBack={handleBackToAdminDashboard}
+        />
+      ) : mode === "staffMyClass" ? (
+        <StaffMyClassScreen
+          staffId={userId}
+          staffName={userName}
+          onBack={handleBackToStaffDashboard}
+        />
+      ) : mode === "createAnnouncement" ? (
+        <CreateAnnouncementScreen
+          onBack={handleBackToAdminDashboard}
+          onAnnouncementCreated={handleBackToAdminDashboard}
+        />
+      ) : mode === "announcements" ? (
+        <AnnouncementsScreen
+          onBack={handleBackToParentHome}
+        />
+      ) : mode === "staffAnnouncements" ? (
+        <StaffAnnouncementsScreen
+          onBack={handleBackToStaffDashboard}
+        />
       ) : (
         <ParentHome 
           userName={userName}
@@ -205,6 +322,7 @@ export default function App() {
           onLogout={handleLogout}
           onNavigateToAddChild={handleNavigateToAddChild}
           onNavigateToMyChildren={handleNavigateToParentChildren}
+          onNavigateToAnnouncements={handleNavigateToAnnouncements}
         />
       )}
     </AppContainer>
