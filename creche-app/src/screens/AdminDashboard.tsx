@@ -13,9 +13,10 @@ type AdminDashboardProps = {
     onNavigateToAddChild?: () => void;
     onNavigateToManageUsers?: () => void;
     onNavigateToAssignChildren?: () => void;
+    onNavigateToCreateAnnouncement?: () => void;
 };
 
-export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren }: AdminDashboardProps) {
+export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren, onNavigateToCreateAnnouncement }: AdminDashboardProps) {
     const [sendingNotification, setSendingNotification] = useState(false);
     const toast = useToast();
 
@@ -193,6 +194,22 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
                             <Text fontSize="xl">👶</Text>
                             <Text color="white" fontSize="md" fontWeight="500">
                                 Add Child
+                            </Text>
+                        </HStack>
+                    </Button>
+
+                    {/* Create Announcement Button */}
+                    <Button
+                        bg="indigo.600"
+                        rounded="xl"
+                        py={4}
+                        onPress={() => onNavigateToCreateAnnouncement && onNavigateToCreateAnnouncement()}
+                        _pressed={{ bg: "indigo.700" }}
+                    >
+                        <HStack space={3} alignItems="center">
+                            <Text fontSize="xl">📢</Text>
+                            <Text color="white" fontSize="md" fontWeight="500">
+                                Create Announcement
                             </Text>
                         </HStack>
                     </Button>

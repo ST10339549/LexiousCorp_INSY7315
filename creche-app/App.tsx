@@ -11,6 +11,9 @@ import AddChildScreen from "./src/screens/AddChildScreen";
 import ParentChildren from "./src/screens/ParentChildren";
 import ManageUsersScreen from "./src/screens/ManageUsersScreen";
 import AssignChildrenScreen from "./src/screens/AssignChildrenScreen";
+import CreateAnnouncementScreen from "./src/screens/CreateAnnouncementScreen";
+import AnnouncementsScreen from "./src/screens/AnnouncementsScreen";
+import StaffAnnouncementsScreen from "./src/screens/StaffAnnouncementsScreen";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "./src/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -116,7 +119,7 @@ async function handleRegister(fullName: string, email: string, password: string)
 }
 
 export default function App() {
-  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass">("login");
+  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements">("login");
   const [userName, setUserName] = useState<string>("");
   const [userRole, setUserRole] = useState<Role>("parent");
   const [userId, setUserId] = useState<string>("");
@@ -157,6 +160,21 @@ export default function App() {
   const handleNavigateToStaffMyClass = () => {
     console.log("Navigating to Staff My Class Screen");
     setMode("staffMyClass");
+  };
+
+  const handleNavigateToCreateAnnouncement = () => {
+    console.log("Navigating to Create Announcement Screen");
+    setMode("createAnnouncement");
+  };
+
+  const handleNavigateToAnnouncements = () => {
+    console.log("Navigating to Announcements Screen");
+    setMode("announcements");
+  };
+
+  const handleNavigateToStaffAnnouncements = () => {
+    console.log("Navigating to Staff Announcements Screen");
+    setMode("staffAnnouncements");
   };
 
   const handleBackToAdminDashboard = () => {
@@ -217,6 +235,7 @@ export default function App() {
           onNavigateToAddChild={handleNavigateToAddChild}
           onNavigateToManageUsers={handleNavigateToManageUsers}
           onNavigateToAssignChildren={handleNavigateToAssignChildren}
+          onNavigateToCreateAnnouncement={handleNavigateToCreateAnnouncement}
         />
       ) : mode === "staff" ? (
         <StaffDashboard
@@ -225,6 +244,7 @@ export default function App() {
           onLogout={handleLogout}
           onNavigateToAttendance={handleNavigateToAttendance}
           onNavigateToMyClass={handleNavigateToStaffMyClass}
+          onNavigateToAnnouncements={handleNavigateToStaffAnnouncements}
         />
       ) : mode === "attendance" ? (
         <AttendanceScreen onBack={() => {
@@ -282,6 +302,19 @@ export default function App() {
           staffName={userName}
           onBack={handleBackToStaffDashboard}
         />
+      ) : mode === "createAnnouncement" ? (
+        <CreateAnnouncementScreen
+          onBack={handleBackToAdminDashboard}
+          onAnnouncementCreated={handleBackToAdminDashboard}
+        />
+      ) : mode === "announcements" ? (
+        <AnnouncementsScreen
+          onBack={handleBackToParentHome}
+        />
+      ) : mode === "staffAnnouncements" ? (
+        <StaffAnnouncementsScreen
+          onBack={handleBackToStaffDashboard}
+        />
       ) : (
         <ParentHome 
           userName={userName}
@@ -289,6 +322,7 @@ export default function App() {
           onLogout={handleLogout}
           onNavigateToAddChild={handleNavigateToAddChild}
           onNavigateToMyChildren={handleNavigateToParentChildren}
+          onNavigateToAnnouncements={handleNavigateToAnnouncements}
         />
       )}
     </AppContainer>
