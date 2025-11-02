@@ -11,9 +11,10 @@ type AdminDashboardProps = {
     onLogout?: () => void;
     onNavigateToAttendance?: () => void;
     onNavigateToAddChild?: () => void;
+    onNavigateToManageUsers?: () => void;
 };
 
-export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild }: AdminDashboardProps) {
+export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers }: AdminDashboardProps) {
     const [sendingNotification, setSendingNotification] = useState(false);
     const toast = useToast();
 
@@ -131,6 +132,22 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
 
                 {/* Dashboard Actions */}
                 <VStack space={4}>
+                    {/* Manage Users Button */}
+                    <Button
+                        bg="purple.600"
+                        rounded="xl"
+                        py={4}
+                        onPress={() => onNavigateToManageUsers && onNavigateToManageUsers()}
+                        _pressed={{ bg: "purple.700" }}
+                    >
+                        <HStack space={3} alignItems="center">
+                            <Text fontSize="xl">👥</Text>
+                            <Text color="white" fontSize="md" fontWeight="500">
+                                Manage Users & Roles
+                            </Text>
+                        </HStack>
+                    </Button>
+
                     {/* Daily Attendance Button */}
                     <Button
                         bg="brand.500"
@@ -165,13 +182,13 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
 
                     {/* Send Test Notification Button */}
                     <Button
-                        bg="purple.600"
+                        bg="orange.600"
                         rounded="xl"
                         py={4}
                         onPress={handleSendTestNotification}
                         isLoading={sendingNotification}
                         isLoadingText="Sending..."
-                        _pressed={{ bg: "purple.700" }}
+                        _pressed={{ bg: "orange.700" }}
                     >
                         <HStack space={3} alignItems="center">
                             <Text fontSize="xl">🔔</Text>

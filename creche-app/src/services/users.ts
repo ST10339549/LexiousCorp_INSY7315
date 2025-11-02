@@ -1,5 +1,5 @@
 
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import { Role, User } from "../types/user";
 
@@ -103,6 +103,55 @@ export async function updateUserDoc(
     console.log(`✅ User document updated for ${uid}`);
   } catch (error) {
     console.error("❌ Error updating user document:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates a user's role (admin only)
+ * 
+ * @param uid - The user's Firebase Auth UID
+ * @param newRole - The new role to assign
+ * @returns Promise<void>
+ */
+export async function updateUserRole(uid: string, newRole: Role): Promise<void> {
+  // Validate role
+  const validRoles: Role[] = ['admin', 'staff', 'parent'];
+  if (!validRoles.includes(newRole)) {
+    throw new Error(`Invalid role: ${newRole}. Must be one of: ${validRoles.join(', ')}`);
+  }
+
+  try {
+    await updateUserDoc(uid, { role: newRole });
+    console.log(`✅ Role updated for ${uid} to ${newRole}`);
+  } catch (error) {
+    console.error("❌ Error updating user role:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches all users from Firestore (admin only)
+ * 
+ * @returns Promise<User[]> - Array of all users
+ */
+export async function fetchAllUsers(): Promise<User[]> {
+  try {
+    const usersRef = collection(db, "users");
+    const snapshot = await getDocs(usersRef);
+
+    const users: User[] = [];
+    snapshot.forEach((doc) => {
+      users.push(doc.data() as User);
+    });
+
+    // Sort by name
+    users.sort((a, b) => a.name.localeCompare(b.name));
+
+    console.log(`✅ Fetched ${users.length} users`);
+    return users;
+  } catch (error) {
+    console.error("❌ Error fetching all users:", error);
     throw error;
   }
 }

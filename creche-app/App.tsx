@@ -8,6 +8,7 @@ import ParentHome from "./src/screens/ParentHome";
 import AttendanceScreen from "./src/screens/AttendanceScreen";
 import AddChildScreen from "./src/screens/AddChildScreen";
 import ParentChildren from "./src/screens/ParentChildren";
+import ManageUsersScreen from "./src/screens/ManageUsersScreen";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "./src/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -113,7 +114,7 @@ async function handleRegister(fullName: string, email: string, password: string)
 }
 
 export default function App() {
-  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren">("login");
+  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers">("login");
   const [userName, setUserName] = useState<string>("");
   const [userRole, setUserRole] = useState<Role>("parent");
   const [userId, setUserId] = useState<string>("");
@@ -139,6 +140,11 @@ export default function App() {
   const handleNavigateToParentChildren = () => {
     console.log("Navigating to Parent Children Screen");
     setMode("parentChildren");
+  };
+
+  const handleNavigateToManageUsers = () => {
+    console.log("Navigating to Manage Users Screen");
+    setMode("manageUsers");
   };
 
   const handleBackToAdminDashboard = () => {
@@ -197,6 +203,7 @@ export default function App() {
           onLogout={handleLogout}
           onNavigateToAttendance={handleNavigateToAttendance}
           onNavigateToAddChild={handleNavigateToAddChild}
+          onNavigateToManageUsers={handleNavigateToManageUsers}
         />
       ) : mode === "staff" ? (
         <StaffDashboard
@@ -244,6 +251,11 @@ export default function App() {
           parentName={userName}
           onAddChild={handleNavigateToAddChild}
           onBack={handleBackToParentHome}
+        />
+      ) : mode === "manageUsers" ? (
+        <ManageUsersScreen
+          currentUserId={userId}
+          onBack={handleBackToAdminDashboard}
         />
       ) : (
         <ParentHome 
