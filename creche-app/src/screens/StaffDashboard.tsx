@@ -1,10 +1,11 @@
 
-import React, { useState } from "react";
-import { Box, VStack, Text, Button, HStack, Heading, useToast } from "native-base";
+import React, { useState, useEffect } from "react";
+import { Box, VStack, Text, Button, HStack, Heading, useToast, ScrollView, Spinner, Divider } from "native-base";
 import { signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { sendTestNotification } from "../services/notifications";
+import { subscribeAnnouncements, Announcement } from "../services/announcements";
 
 type StaffDashboardProps = {
   userName?: string;
@@ -24,6 +25,8 @@ export default function StaffDashboard({
   onNavigateToAnnouncements,
 }: StaffDashboardProps) {
   const [sendingNotification, setSendingNotification] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
   const toast = useToast();
 
   const handleLogout = async () => {
@@ -160,111 +163,218 @@ export default function StaffDashboard({
     }
   };
 
+  /**
+   * Format timestamp for display
+   */
+  const formatDate = (timestamp: any): string => {
+    if (!timestamp) return "Unknown date";
+
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
+      if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+      if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Unknown date";
+    }
+  };
+
+  /**
+   * Subscribe to announcements updates
+   */
+  useEffect(() => {
+    console.log("[StaffDashboard] Setting up announcements subscription");
+
+    const unsubscribe = subscribeAnnouncements(
+      (updatedAnnouncements) => {
+        console.log(`[StaffDashboard] Received ${updatedAnnouncements.length} announcements`);
+        setAnnouncements(updatedAnnouncements.slice(0, 3));
+        setLoadingAnnouncements(false);
+      },
+      3, // Limit to 3 most recent announcements
+      "staff" // Filter for staff-relevant announcements
+    );
+
+    return () => {
+      console.log("[StaffDashboard] Cleaning up announcements subscription");
+      unsubscribe();
+    };
+  }, []);
+
   return (
-    <Box flex={1} bg="bg.900" px={6} py={12} safeArea>
-      <VStack space={6}>
-        {/* Header */}
-        <HStack justifyContent="space-between" alignItems="center">
-          <VStack>
-            <Heading color="white" size="xl">
-              Staff Dashboard
-            </Heading>
-            <Text color="coolGray.400" fontSize="md">
-              Welcome, {userName || "Staff"}
-            </Text>
+    <Box flex={1} bg="bg.900" safeArea>
+      <ScrollView flex={1}>
+        <VStack space={6} px={6} py={12}>
+          {/* Header */}
+          <HStack justifyContent="space-between" alignItems="center">
+            <VStack>
+              <Heading color="white" size="xl">
+                Staff Dashboard
+              </Heading>
+              <Text color="coolGray.400" fontSize="md">
+                Welcome, {userName || "Staff"}
+              </Text>
+            </VStack>
+            <Button
+              onPress={handleLogout}
+              variant="outline"
+              borderColor="red.500"
+              _text={{ color: "red.500" }}
+            >
+              Logout
+            </Button>
+          </HStack>
+
+          {/* Announcements Section */}
+          <VStack space={4}>
+            <HStack justifyContent="space-between" alignItems="center">
+              <Heading color="white" size="lg">
+                📢 Announcements
+              </Heading>
+              {announcements.length > 0 && onNavigateToAnnouncements && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onPress={onNavigateToAnnouncements}
+                  _text={{ color: "brand.500", fontWeight: "600" }}
+                >
+                  View All
+                </Button>
+              )}
+            </HStack>
+
+            {/* Announcements List */}
+            {loadingAnnouncements ? (
+              <Box py={6} alignItems="center">
+                <Spinner size="sm" color="brand.500" />
+              </Box>
+            ) : announcements.length === 0 ? (
+              <Box
+                bg="coolGray.800"
+                p={4}
+                rounded="xl"
+                borderWidth={1}
+                borderColor="coolGray.700"
+                alignItems="center"
+              >
+                <Text fontSize="2xl" mb={1}>
+                  �
+                </Text>
+                <Text color="coolGray.500" fontSize="sm" textAlign="center">
+                  No announcements at this time
+                </Text>
+              </Box>
+            ) : (
+              <VStack space={3}>
+                {announcements.map((announcement) => (
+                  <Box
+                    key={announcement.id}
+                    bg="coolGray.800"
+                    p={4}
+                    rounded="xl"
+                    borderWidth={1}
+                    borderColor="coolGray.700"
+                  >
+                    <VStack space={2}>
+                      <HStack justifyContent="space-between" alignItems="flex-start">
+                        <Text
+                          color="white"
+                          fontSize="md"
+                          fontWeight="bold"
+                          flex={1}
+                        >
+                          {announcement.title}
+                        </Text>
+                        <Text color="coolGray.500" fontSize="xs" ml={2}>
+                          {formatDate(announcement.createdAt)}
+                        </Text>
+                      </HStack>
+                      <Text
+                        color="coolGray.300"
+                        fontSize="sm"
+                        numberOfLines={2}
+                      >
+                        {announcement.body}
+                      </Text>
+                    </VStack>
+                  </Box>
+                ))}
+              </VStack>
+            )}
           </VStack>
-          <Button
-            onPress={handleLogout}
-            variant="outline"
-            borderColor="red.500"
-            _text={{ color: "red.500" }}
-          >
-            Logout
-          </Button>
-        </HStack>
 
-        {/* Dashboard Actions */}
-        <VStack space={4}>
-          {/* Take Attendance Button */}
-          <Button
-            bg="brand.500"
-            rounded="xl"
-            py={4}
-            onPress={handleTakeAttendance}
-            _pressed={{ bg: "brand.600" }}
-          >
-            <HStack space={3} alignItems="center">
-              <Text fontSize="xl">📋</Text>
-              <Text color="white" fontSize="md" fontWeight="500">
-                Take Attendance
-              </Text>
-            </HStack>
-          </Button>
+          {/* Dashboard Actions */}
+          <VStack space={4}>
+            {/* Take Attendance Button */}
+            <Button
+              bg="brand.500"
+              rounded="xl"
+              py={4}
+              onPress={handleTakeAttendance}
+              _pressed={{ bg: "brand.600" }}
+            >
+              <HStack space={3} alignItems="center">
+                <Text fontSize="xl">�</Text>
+                <Text color="white" fontSize="md" fontWeight="500">
+                  Take Attendance
+                </Text>
+              </HStack>
+            </Button>
 
-          {/* My Class/Children Button */}
-          <Button
-            bg="green.600"
-            rounded="xl"
-            py={4}
-            onPress={handleMyClass}
-            _pressed={{ bg: "green.700" }}
-          >
-            <HStack space={3} alignItems="center">
-              <Text fontSize="xl">👶</Text>
-              <Text color="white" fontSize="md" fontWeight="500">
-                My Class/Children
-              </Text>
-            </HStack>
-          </Button>
+            {/* My Class/Children Button */}
+            <Button
+              bg="green.600"
+              rounded="xl"
+              py={4}
+              onPress={handleMyClass}
+              _pressed={{ bg: "green.700" }}
+            >
+              <HStack space={3} alignItems="center">
+                <Text fontSize="xl">�</Text>
+                <Text color="white" fontSize="md" fontWeight="500">
+                  My Class/Children
+                </Text>
+              </HStack>
+            </Button>
 
-          {/* Announcements Button */}
-          <Button
-            bg="orange.600"
-            rounded="xl"
-            py={4}
-            onPress={handleAnnouncements}
-            _pressed={{ bg: "orange.700" }}
-          >
-            <HStack space={3} alignItems="center">
-              <Text fontSize="xl">📢</Text>
-              <Text color="white" fontSize="md" fontWeight="500">
-                Announcements
-              </Text>
-            </HStack>
-          </Button>
-
-          {/* Send Test Notification Button */}
-          <Button
-            bg="purple.600"
-            rounded="xl"
-            py={4}
-            onPress={handleSendTestNotification}
-            isLoading={sendingNotification}
-            isLoadingText="Sending..."
-            _pressed={{ bg: "purple.700" }}
-          >
-            <HStack space={3} alignItems="center">
-              <Text fontSize="xl">🔔</Text>
-              <Text color="white" fontSize="md" fontWeight="500">
-                Send Test Notification
-              </Text>
-            </HStack>
-          </Button>
-
-          {/* Placeholder for future features */}
-          <Box
-            bg="coolGray.800"
-            p={4}
-            rounded="xl"
-            borderWidth={1}
-            borderColor="coolGray.700"
-          >
-            <Text color="coolGray.400" textAlign="center" fontWeight="500">
-              More staff features coming soon!
-            </Text>
-          </Box>
+            {/* Send Test Notification Button */}
+            <Button
+              variant="outline"
+              rounded="xl"
+              py={4}
+              onPress={handleSendTestNotification}
+              isLoading={sendingNotification}
+              _loading={{
+                bg: "blueGray.700",
+                opacity: 0.5,
+              }}
+              borderColor="blueGray.600"
+              _text={{ color: "white" }}
+              _pressed={{ bg: "blueGray.700" }}
+            >
+              <HStack space={3} alignItems="center">
+                <Text fontSize="xl">🔔</Text>
+                <Text color="coolGray.100" fontSize="md" fontWeight="500">
+                  Test Notifications
+                </Text>
+              </HStack>
+            </Button>
+          </VStack>
         </VStack>
-      </VStack>
+      </ScrollView>
     </Box>
   );
 }

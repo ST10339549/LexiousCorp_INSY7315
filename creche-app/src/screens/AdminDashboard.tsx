@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { Box, VStack, Text, Button, HStack, Heading, useToast } from "native-base";
+import React, { useState, useEffect } from "react";
+import { Box, VStack, Text, Button, HStack, Heading, useToast, ScrollView, Spinner, Divider } from "native-base";
 import { signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { sendTestNotification } from "../services/notifications";
+import { subscribeAnnouncements, Announcement } from "../services/announcements";
 
 type AdminDashboardProps = {
     userName?: string;
@@ -18,6 +19,8 @@ type AdminDashboardProps = {
 
 export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren, onNavigateToCreateAnnouncement }: AdminDashboardProps) {
     const [sendingNotification, setSendingNotification] = useState(false);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
     const toast = useToast();
 
     const handleLogout = async () => {
@@ -108,6 +111,59 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
             setSendingNotification(false);
         }
     };
+
+    /**
+     * Format timestamp for display
+     */
+    const formatDate = (timestamp: any): string => {
+        if (!timestamp) return "Unknown date";
+
+        try {
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const now = new Date();
+            const diffMs = now.getTime() - date.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return "Just now";
+            if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+
+            return date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+            });
+        } catch (error) {
+            console.error("Error formatting date:", error);
+            return "Unknown date";
+        }
+    };
+
+    /**
+     * Subscribe to announcements updates
+     */
+    useEffect(() => {
+        console.log("[AdminDashboard] Setting up announcements subscription");
+
+        const unsubscribe = subscribeAnnouncements(
+            (updatedAnnouncements) => {
+                console.log(`[AdminDashboard] Received ${updatedAnnouncements.length} announcements`);
+                // Only show latest 3 announcements on home screen
+                setAnnouncements(updatedAnnouncements.slice(0, 3));
+                setLoadingAnnouncements(false);
+            },
+            3, // Limit to 3 most recent announcements
+            "all" // Show all announcements for admin
+        );
+
+        // Cleanup subscription on unmount
+        return () => {
+            console.log("[AdminDashboard] Cleaning up announcements subscription");
+            unsubscribe();
+        };
+    }, []);
 
     return (
         <Box flex={1} bg="bg.900" px={6} py={12}>
