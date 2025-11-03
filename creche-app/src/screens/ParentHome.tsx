@@ -19,7 +19,7 @@ import { listenChildrenByParent, Child } from "../services/children";
 import { subscribeAnnouncements, Announcement } from "../services/announcements";
 import { MaterialIcons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
-import { sendTestNotification } from "../services/notifications";
+
 
 type ParentHomeProps = {
   userName?: string;
@@ -39,7 +39,7 @@ export default function ParentHome({
 }: ParentHomeProps) {
   const [children, setChildren] = useState<Child[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
-  const [sendingNotification, setSendingNotification] = useState(false);
+
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
   const toast = useToast();
@@ -54,84 +54,7 @@ export default function ParentHome({
     }
   };
 
-  /**
-   * Send a test notification to the current user
-   */
-  const handleSendTestNotification = async () => {
-    if (!userId) {
-      toast.show({
-        title: "Error: User ID not found",
-        placement: "top",
-        bg: "red.500",
-      });
-      return;
-    }
 
-    setSendingNotification(true);
-
-    try {
-      // Fetch user's push token from Firestore
-      const userDocRef = doc(db, "users", userId);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        toast.show({
-          title: "Error: User not found",
-          placement: "top",
-          bg: "red.500",
-        });
-        setSendingNotification(false);
-        return;
-      }
-
-      const userData = userDoc.data();
-      const pushToken = userData.pushToken;
-
-      if (!pushToken) {
-        toast.show({
-          title: "No Push Token",
-          description: "Please restart the app to register for notifications",
-          placement: "top",
-          duration: 4000,
-          bg: "orange.500",
-        });
-        setSendingNotification(false);
-        return;
-      }
-
-      console.log("Sending test notification to:", pushToken);
-
-      // Send test notification
-      const success = await sendTestNotification(pushToken);
-
-      if (success) {
-        toast.show({
-          title: "✅ Notification Sent!",
-          description: "Check your notification tray",
-          placement: "top",
-          duration: 3000,
-          bg: "green.500",
-        });
-      } else {
-        toast.show({
-          title: "Failed to Send",
-          description: "Could not send notification. Check console.",
-          placement: "top",
-          bg: "red.500",
-        });
-      }
-    } catch (error) {
-      console.error("Error sending test notification:", error);
-      toast.show({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Unknown error",
-        placement: "top",
-        bg: "red.500",
-      });
-    } finally {
-      setSendingNotification(false);
-    }
-  };
 
   /**
    * Subscribe to real-time updates for children
@@ -356,23 +279,7 @@ export default function ParentHome({
               </HStack>
             </Button>
 
-            {/* Send Test Notification Button */}
-            <Button
-              bg="purple.600"
-              rounded="xl"
-              py={4}
-              onPress={handleSendTestNotification}
-              isLoading={sendingNotification}
-              isLoadingText="Sending..."
-              _pressed={{ bg: "purple.700" }}
-            >
-              <HStack space={3} alignItems="center">
-                <Text fontSize="xl">🔔</Text>
-                <Text color="white" fontSize="md" fontWeight="500">
-                  Send Test Notification
-                </Text>
-              </HStack>
-            </Button>
+
           </VStack>
 
           {/* Announcements Section */}

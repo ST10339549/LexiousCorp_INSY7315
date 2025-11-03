@@ -1,9 +1,8 @@
-import React, { useState } from "react";
-import { Box, VStack, Text, Button, HStack, Heading, useToast } from "native-base";
+import React, { useState, useEffect } from "react";
+import { Box, VStack, Text, Button, HStack, Heading, useToast, ScrollView, Spinner, Divider } from "native-base";
 import { signOut } from "firebase/auth";
-import { auth, db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { sendTestNotification } from "../services/notifications";
+import { auth } from "../firebase";
+import { subscribeAnnouncements, Announcement } from "../services/announcements";
 
 type AdminDashboardProps = {
     userName?: string;
@@ -17,7 +16,8 @@ type AdminDashboardProps = {
 };
 
 export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren, onNavigateToCreateAnnouncement }: AdminDashboardProps) {
-    const [sendingNotification, setSendingNotification] = useState(false);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
     const toast = useToast();
 
     const handleLogout = async () => {
@@ -30,110 +30,163 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
         }
     };
 
-    /**
-     * Send a test notification to the current admin user
-     */
-    const handleSendTestNotification = async () => {
-        if (!userId) {
-            toast.show({
-                title: "Error: User ID not found",
-                placement: "top",
-                bg: "red.500",
-            });
-            return;
-        }
 
-        setSendingNotification(true);
+
+    /**
+     * Format timestamp for display
+     */
+    const formatDate = (timestamp: any): string => {
+        if (!timestamp) return "Unknown date";
 
         try {
-            // Fetch user's push token from Firestore
-            const userDocRef = doc(db, "users", userId);
-            const userDoc = await getDoc(userDocRef);
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const now = new Date();
+            const diffMs = now.getTime() - date.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
 
-            if (!userDoc.exists()) {
-                toast.show({
-                    title: "Error: User not found",
-                    placement: "top",
-                    bg: "red.500",
-                });
-                setSendingNotification(false);
-                return;
-            }
+            if (diffMins < 1) return "Just now";
+            if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
 
-            const userData = userDoc.data();
-            const pushToken = userData.pushToken;
-
-            if (!pushToken) {
-                toast.show({
-                    title: "No Push Token",
-                    description: "Please restart the app to register for notifications",
-                    placement: "top",
-                    duration: 4000,
-                    bg: "orange.500",
-                });
-                setSendingNotification(false);
-                return;
-            }
-
-            console.log("Sending test notification to:", pushToken);
-
-            // Send test notification
-            const success = await sendTestNotification(pushToken);
-
-            if (success) {
-                toast.show({
-                    title: "✅ Notification Sent!",
-                    description: "Check your notification tray",
-                    placement: "top",
-                    duration: 3000,
-                    bg: "green.500",
-                });
-            } else {
-                toast.show({
-                    title: "Failed to Send",
-                    description: "Could not send notification. Check console.",
-                    placement: "top",
-                    bg: "red.500",
-                });
-            }
-        } catch (error) {
-            console.error("Error sending test notification:", error);
-            toast.show({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Unknown error",
-                placement: "top",
-                bg: "red.500",
+            return date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
             });
-        } finally {
-            setSendingNotification(false);
+        } catch (error) {
+            console.error("Error formatting date:", error);
+            return "Unknown date";
         }
     };
 
-    return (
-        <Box flex={1} bg="bg.900" px={6} py={12}>
-            <VStack space={6}>
-                {/* Header */}
-                <HStack justifyContent="space-between" alignItems="center">
-                    <VStack>
-                        <Heading color="white" size="xl">
-                            Admin Dashboard
-                        </Heading>
-                        <Text color="coolGray.400" fontSize="md">
-                            Welcome back, {userName || "Admin"}
-                        </Text>
-                    </VStack>
-                    <Button
-                        onPress={handleLogout}
-                        variant="outline"
-                        borderColor="red.500"
-                        _text={{ color: "red.500" }}
-                    >
-                        Logout
-                    </Button>
-                </HStack>
+    /**
+     * Subscribe to announcements updates
+     */
+    useEffect(() => {
+        console.log("[AdminDashboard] Setting up announcements subscription");
 
-                {/* Dashboard Actions */}
-                <VStack space={4}>
+        const unsubscribe = subscribeAnnouncements(
+            (updatedAnnouncements) => {
+                console.log(`[AdminDashboard] Received ${updatedAnnouncements.length} announcements`);
+                // Only show latest 3 announcements on home screen
+                setAnnouncements(updatedAnnouncements.slice(0, 3));
+                setLoadingAnnouncements(false);
+            },
+            3, // Limit to 3 most recent announcements
+            "all" // Show all announcements for admin
+        );
+
+        // Cleanup subscription on unmount
+        return () => {
+            console.log("[AdminDashboard] Cleaning up announcements subscription");
+            unsubscribe();
+        };
+    }, []);
+
+    return (
+        <Box flex={1} bg="bg.900" safeArea>
+            <ScrollView flex={1}>
+                <VStack space={6} px={6} py={12}>
+                    {/* Header */}
+                    <HStack justifyContent="space-between" alignItems="center">
+                        <VStack>
+                            <Heading color="white" size="xl">
+                                Admin Dashboard
+                            </Heading>
+                            <Text color="coolGray.400" fontSize="md">
+                                Welcome back, {userName || "Admin"}
+                            </Text>
+                        </VStack>
+                        <Button
+                            onPress={handleLogout}
+                            variant="outline"
+                            borderColor="red.500"
+                            _text={{ color: "red.500" }}
+                        >
+                            Logout
+                        </Button>
+                    </HStack>
+
+                    {/* Announcements Section */}
+                    <VStack space={4}>
+                        <HStack justifyContent="space-between" alignItems="center">
+                            <Heading color="white" size="lg">
+                                📢 Announcements
+                            </Heading>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onPress={() => onNavigateToCreateAnnouncement && onNavigateToCreateAnnouncement()}
+                                _text={{ color: "brand.500", fontWeight: "600" }}
+                            >
+                                Create New
+                            </Button>
+                        </HStack>
+
+                        {/* Announcements List */}
+                        {loadingAnnouncements ? (
+                            <Box py={6} alignItems="center">
+                                <Spinner size="sm" color="brand.500" />
+                            </Box>
+                        ) : announcements.length === 0 ? (
+                            <Box
+                                bg="coolGray.800"
+                                p={4}
+                                rounded="xl"
+                                borderWidth={1}
+                                borderColor="coolGray.700"
+                                alignItems="center"
+                            >
+                                <Text fontSize="2xl" mb={1}>
+                                    📭
+                                </Text>
+                                <Text color="coolGray.500" fontSize="sm" textAlign="center">
+                                    No announcements at this time
+                                </Text>
+                            </Box>
+                        ) : (
+                            <VStack space={3}>
+                                {announcements.map((announcement) => (
+                                    <Box
+                                        key={announcement.id}
+                                        bg="coolGray.800"
+                                        p={4}
+                                        rounded="xl"
+                                        borderWidth={1}
+                                        borderColor="coolGray.700"
+                                    >
+                                        <VStack space={2}>
+                                            <HStack justifyContent="space-between" alignItems="flex-start">
+                                                <Text
+                                                    color="white"
+                                                    fontSize="md"
+                                                    fontWeight="bold"
+                                                    flex={1}
+                                                >
+                                                    {announcement.title}
+                                                </Text>
+                                                <Text color="coolGray.500" fontSize="xs" ml={2}>
+                                                    {formatDate(announcement.createdAt)}
+                                                </Text>
+                                            </HStack>
+                                            <Text
+                                                color="coolGray.300"
+                                                fontSize="sm"
+                                                numberOfLines={2}
+                                            >
+                                                {announcement.body}
+                                            </Text>
+                                        </VStack>
+                                    </Box>
+                                ))}
+                            </VStack>
+                        )}
+                    </VStack>
+
+                    {/* Dashboard Actions */}
+                    <VStack space={4}>
                     {/* Manage Users Button */}
                     <Button
                         bg="purple.600"
@@ -214,32 +267,12 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
                         </HStack>
                     </Button>
 
-                    {/* Send Test Notification Button */}
-                    <Button
-                        bg="orange.600"
-                        rounded="xl"
-                        py={4}
-                        onPress={handleSendTestNotification}
-                        isLoading={sendingNotification}
-                        isLoadingText="Sending..."
-                        _pressed={{ bg: "orange.700" }}
-                    >
-                        <HStack space={3} alignItems="center">
-                            <Text fontSize="xl">🔔</Text>
-                            <Text color="white" fontSize="md" fontWeight="500">
-                                Send Test Notification
-                            </Text>
-                        </HStack>
-                    </Button>
+
 
                     {/* Placeholder for future features */}
-                    <Box bg="coolGray.800" p={4} rounded="xl" borderWidth={1} borderColor="coolGray.700">
-                        <Text color="coolGray.400" textAlign="center" fontWeight="500">
-                            More admin features coming soon!
-                        </Text>
-                    </Box>
                 </VStack>
-            </VStack>
+                </VStack>
+            </ScrollView>
         </Box>
     );
 }

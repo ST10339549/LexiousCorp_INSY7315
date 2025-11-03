@@ -24,7 +24,7 @@ import { collection as firestoreCollection, getDocs as firestoreGetDocs } from "
 /**
  * Announcement audience type
  */
-export type AnnouncementAudience = 'all' | 'parents' | 'staff';
+export type AnnouncementAudience = 'all' | 'parents' | 'staff' | 'admin';
 
 /**
  * Announcement data structure
@@ -175,7 +175,7 @@ export async function listAnnouncements(
 ): Promise<Announcement[]> {
   try {
     const announcementsRef = collection(db, "announcements");
-    
+
     let q = query(
       announcementsRef,
       orderBy("createdAt", "desc")
@@ -223,7 +223,7 @@ export function subscribeAnnouncements(
 ): () => void {
   try {
     const announcementsRef = collection(db, "announcements");
-    
+
     let q = query(
       announcementsRef,
       orderBy("createdAt", "desc")
@@ -240,7 +240,7 @@ export function subscribeAnnouncements(
       q,
       (querySnapshot) => {
         const announcements: Announcement[] = [];
-        
+
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           // Filter by audience in memory if specified

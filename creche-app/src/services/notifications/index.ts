@@ -4,7 +4,7 @@
 
 export {
   registerForPushNotifications,
-  scheduleLocalNotification,
+
   cancelAllNotifications,
   checkNotificationPermissions,
 } from './registerForPushNotifications';
@@ -12,7 +12,7 @@ export {
 export {
   sendPushNotification,
   sendBatchNotifications,
-  sendTestNotification,
+
   sendAttendanceReminder,
   sendPickupNotification,
   sendEmergencyAlert,
