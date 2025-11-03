@@ -13,9 +13,10 @@ type AdminDashboardProps = {
     onNavigateToManageUsers?: () => void;
     onNavigateToAssignChildren?: () => void;
     onNavigateToCreateAnnouncement?: () => void;
+    onNavigateToManageEvents?: () => void;
 };
 
-export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren, onNavigateToCreateAnnouncement }: AdminDashboardProps) {
+export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren, onNavigateToCreateAnnouncement, onNavigateToManageEvents }: AdminDashboardProps) {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
     const toast = useToast();
@@ -267,7 +268,21 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
                         </HStack>
                     </Button>
 
-
+                    {/* Manage Events Button */}
+                    <Button
+                        bg="orange.600"
+                        rounded="xl"
+                        py={4}
+                        onPress={() => onNavigateToManageEvents && onNavigateToManageEvents()}
+                        _pressed={{ bg: "orange.700" }}
+                    >
+                        <HStack space={3} alignItems="center">
+                            <Text fontSize="xl">📅</Text>
+                            <Text color="white" fontSize="md" fontWeight="500">
+                                Manage Events
+                            </Text>
+                        </HStack>
+                    </Button>
 
                     {/* Placeholder for future features */}
                 </VStack>
