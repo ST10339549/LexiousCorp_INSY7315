@@ -14,6 +14,8 @@ import AssignChildrenScreen from "./src/screens/AssignChildrenScreen";
 import CreateAnnouncementScreen from "./src/screens/CreateAnnouncementScreen";
 import AnnouncementsScreen from "./src/screens/AnnouncementsScreen";
 import StaffAnnouncementsScreen from "./src/screens/StaffAnnouncementsScreen";
+import ManageEventsScreen from "./src/screens/ManageEventsScreen";
+import ParentEventsCalendar from "./src/screens/ParentEventsCalendar";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "./src/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -119,7 +121,7 @@ async function handleRegister(fullName: string, email: string, password: string)
 }
 
 export default function App() {
-  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements">("login");
+  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements" | "manageEvents" | "parentEvents">("login");
   const [userName, setUserName] = useState<string>("");
   const [userRole, setUserRole] = useState<Role>("parent");
   const [userId, setUserId] = useState<string>("");
@@ -175,6 +177,16 @@ export default function App() {
   const handleNavigateToStaffAnnouncements = () => {
     console.log("Navigating to Staff Announcements Screen");
     setMode("staffAnnouncements");
+  };
+
+  const handleNavigateToManageEvents = () => {
+    console.log("Navigating to Manage Events Screen");
+    setMode("manageEvents");
+  };
+
+  const handleNavigateToParentEvents = () => {
+    console.log("Navigating to Parent Events Calendar");
+    setMode("parentEvents");
   };
 
   const handleBackToAdminDashboard = () => {
@@ -236,6 +248,7 @@ export default function App() {
           onNavigateToManageUsers={handleNavigateToManageUsers}
           onNavigateToAssignChildren={handleNavigateToAssignChildren}
           onNavigateToCreateAnnouncement={handleNavigateToCreateAnnouncement}
+          onNavigateToManageEvents={handleNavigateToManageEvents}
         />
       ) : mode === "staff" ? (
         <StaffDashboard
@@ -315,6 +328,15 @@ export default function App() {
         <StaffAnnouncementsScreen
           onBack={handleBackToStaffDashboard}
         />
+      ) : mode === "manageEvents" ? (
+        <ManageEventsScreen
+          userId={userId}
+          onBack={handleBackToAdminDashboard}
+        />
+      ) : mode === "parentEvents" ? (
+        <ParentEventsCalendar
+          onBack={handleBackToParentHome}
+        />
       ) : (
         <ParentHome 
           userName={userName}
@@ -323,6 +345,7 @@ export default function App() {
           onNavigateToAddChild={handleNavigateToAddChild}
           onNavigateToMyChildren={handleNavigateToParentChildren}
           onNavigateToAnnouncements={handleNavigateToAnnouncements}
+          onNavigateToEvents={handleNavigateToParentEvents}
         />
       )}
     </AppContainer>
