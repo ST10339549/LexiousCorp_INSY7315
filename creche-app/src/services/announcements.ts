@@ -63,7 +63,7 @@ export async function createAnnouncement(
   }
 
   // Validate audience
-  const validAudiences: AnnouncementAudience[] = ['all', 'parents', 'staff', 'admin'];
+  const validAudiences: AnnouncementAudience[] = ['all', 'parents', 'staff'];
   if (!validAudiences.includes(data.audience)) {
     throw new Error(
       `Invalid audience: ${data.audience}. Must be one of: ${validAudiences.join(', ')}`
@@ -175,7 +175,7 @@ export async function listAnnouncements(
 ): Promise<Announcement[]> {
   try {
     const announcementsRef = collection(db, "announcements");
-    
+
     let q = query(
       announcementsRef,
       orderBy("createdAt", "desc")
@@ -223,7 +223,7 @@ export function subscribeAnnouncements(
 ): () => void {
   try {
     const announcementsRef = collection(db, "announcements");
-    
+
     let q = query(
       announcementsRef,
       orderBy("createdAt", "desc")
@@ -240,7 +240,7 @@ export function subscribeAnnouncements(
       q,
       (querySnapshot) => {
         const announcements: Announcement[] = [];
-        
+
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           // Filter by audience in memory if specified

@@ -290,25 +290,7 @@ export async function sendBatchNotifications(
   }
 }
 
-/**
- * Send a test notification to the current user
- * 
- * @param pushToken - User's Expo Push Token
- * @returns Promise<boolean> - true if successful
- */
-export async function sendTestNotification(
-  pushToken: string
-): Promise<boolean> {
-  return sendPushNotification(
-    pushToken,
-    '🧪 Test Notification',
-    'This is a test notification from your Creche App!',
-    {
-      type: 'test',
-      timestamp: new Date().toISOString(),
-    }
-  );
-}
+
 
 /**
  * Send attendance reminder notification

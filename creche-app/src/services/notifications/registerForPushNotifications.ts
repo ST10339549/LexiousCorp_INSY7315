@@ -174,35 +174,7 @@ function registerNotificationListeners() {
   console.log('👂 Notification listeners registered');
 }
 
-/**
- * Schedule a local notification (for testing)
- * 
- * @param title - Notification title
- * @param body - Notification body
- * @param data - Optional data payload
- * @param delaySeconds - Delay before showing notification (default: 2 seconds)
- */
-export async function scheduleLocalNotification(
-  title: string,
-  body: string,
-  data: Record<string, any> = {},
-  delaySeconds: number = 2
-): Promise<string> {
-  const notificationId = await Notifications.scheduleNotificationAsync({
-    content: {
-      title,
-      body,
-      data,
-      sound: true,
-    },
-    trigger: {
-      seconds: delaySeconds,
-    },
-  });
 
-  console.log(`📅 Local notification scheduled (ID: ${notificationId})`);
-  return notificationId;
-}
 
 /**
  * Cancel all scheduled notifications

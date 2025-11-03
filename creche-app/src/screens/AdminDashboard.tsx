@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Box, VStack, Text, Button, HStack, Heading, useToast, ScrollView, Spinner, Divider } from "native-base";
 import { signOut } from "firebase/auth";
-import { auth, db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { sendTestNotification } from "../services/notifications";
+import { auth } from "../firebase";
 import { subscribeAnnouncements, Announcement } from "../services/announcements";
 
 type AdminDashboardProps = {
@@ -18,7 +16,6 @@ type AdminDashboardProps = {
 };
 
 export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren, onNavigateToCreateAnnouncement }: AdminDashboardProps) {
-    const [sendingNotification, setSendingNotification] = useState(false);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
     const toast = useToast();
@@ -33,84 +30,7 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
         }
     };
 
-    /**
-     * Send a test notification to the current admin user
-     */
-    const handleSendTestNotification = async () => {
-        if (!userId) {
-            toast.show({
-                title: "Error: User ID not found",
-                placement: "top",
-                bg: "red.500",
-            });
-            return;
-        }
 
-        setSendingNotification(true);
-
-        try {
-            // Fetch user's push token from Firestore
-            const userDocRef = doc(db, "users", userId);
-            const userDoc = await getDoc(userDocRef);
-
-            if (!userDoc.exists()) {
-                toast.show({
-                    title: "Error: User not found",
-                    placement: "top",
-                    bg: "red.500",
-                });
-                setSendingNotification(false);
-                return;
-            }
-
-            const userData = userDoc.data();
-            const pushToken = userData.pushToken;
-
-            if (!pushToken) {
-                toast.show({
-                    title: "No Push Token",
-                    description: "Please restart the app to register for notifications",
-                    placement: "top",
-                    duration: 4000,
-                    bg: "orange.500",
-                });
-                setSendingNotification(false);
-                return;
-            }
-
-            console.log("Sending test notification to:", pushToken);
-
-            // Send test notification
-            const success = await sendTestNotification(pushToken);
-
-            if (success) {
-                toast.show({
-                    title: "✅ Notification Sent!",
-                    description: "Check your notification tray",
-                    placement: "top",
-                    duration: 3000,
-                    bg: "green.500",
-                });
-            } else {
-                toast.show({
-                    title: "Failed to Send",
-                    description: "Could not send notification. Check console.",
-                    placement: "top",
-                    bg: "red.500",
-                });
-            }
-        } catch (error) {
-            console.error("Error sending test notification:", error);
-            toast.show({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Unknown error",
-                placement: "top",
-                bg: "red.500",
-            });
-        } finally {
-            setSendingNotification(false);
-        }
-    };
 
     /**
      * Format timestamp for display
@@ -154,8 +74,8 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
                 setAnnouncements(updatedAnnouncements.slice(0, 3));
                 setLoadingAnnouncements(false);
             },
-            3 // Limit to 3 most recent announcements
-            // No audience filter - admins see all announcements regardless of target audience
+            3, // Limit to 3 most recent announcements
+            "all" // Show all announcements for admin
         );
 
         // Cleanup subscription on unmount
@@ -347,23 +267,7 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
                         </HStack>
                     </Button>
 
-                    {/* Send Test Notification Button */}
-                    <Button
-                        bg="orange.600"
-                        rounded="xl"
-                        py={4}
-                        onPress={handleSendTestNotification}
-                        isLoading={sendingNotification}
-                        isLoadingText="Sending..."
-                        _pressed={{ bg: "orange.700" }}
-                    >
-                        <HStack space={3} alignItems="center">
-                            <Text fontSize="xl">🔔</Text>
-                            <Text color="white" fontSize="md" fontWeight="500">
-                                Send Test Notification
-                            </Text>
-                        </HStack>
-                    </Button>
+
 
                     {/* Placeholder for future features */}
                 </VStack>
