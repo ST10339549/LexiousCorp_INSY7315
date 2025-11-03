@@ -24,7 +24,7 @@ import { collection as firestoreCollection, getDocs as firestoreGetDocs } from "
 /**
  * Announcement audience type
  */
-export type AnnouncementAudience = 'all' | 'parents' | 'staff';
+export type AnnouncementAudience = 'all' | 'parents' | 'staff' | 'admin';
 
 /**
  * Announcement data structure

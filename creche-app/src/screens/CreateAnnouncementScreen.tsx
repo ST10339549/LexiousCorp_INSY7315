@@ -126,6 +126,8 @@ export default function CreateAnnouncementScreen({
         return "Parents only";
       case "staff":
         return "Staff and admins only";
+      case "admin":
+        return "Admins only";
       default:
         return "";
     }
@@ -213,6 +215,7 @@ export default function CreateAnnouncementScreen({
                   <Select.Item label="All Users" value="all" />
                   <Select.Item label="Parents Only" value="parents" />
                   <Select.Item label="Staff Only" value="staff" />
+                  <Select.Item label="Admins Only" value="admin" />
                 </Select>
                 <FormControl.HelperText>
                   {getAudienceDescription(audience)}
