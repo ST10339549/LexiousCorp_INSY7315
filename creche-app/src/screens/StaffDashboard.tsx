@@ -191,7 +191,7 @@ export default function StaffDashboard({
                 alignItems="center"
               >
                 <Text fontSize="2xl" mb={1}>
-                  �
+                  📭
                 </Text>
                 <Text color="coolGray.500" fontSize="sm" textAlign="center">
                   No announcements at this time
@@ -247,7 +247,7 @@ export default function StaffDashboard({
               _pressed={{ bg: "brand.600" }}
             >
               <HStack space={3} alignItems="center">
-                <Text fontSize="xl">�</Text>
+                <Text fontSize="xl">📋</Text>
                 <Text color="white" fontSize="md" fontWeight="500">
                   Take Attendance
                 </Text>
@@ -263,7 +263,7 @@ export default function StaffDashboard({
               _pressed={{ bg: "green.700" }}
             >
               <HStack space={3} alignItems="center">
-                <Text fontSize="xl">�</Text>
+                <Text fontSize="xl">👶</Text>
                 <Text color="white" fontSize="md" fontWeight="500">
                   My Class/Children
                 </Text>
