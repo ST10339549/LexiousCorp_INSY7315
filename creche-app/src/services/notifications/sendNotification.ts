@@ -6,7 +6,7 @@
  * @see https://docs.expo.dev/push-notifications/sending-notifications/
  */
 
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, QueryDocumentSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { User, Role } from '../../types/user';
 
@@ -68,7 +68,7 @@ export async function sendAnnouncementPush(
     
     // Filter users by role and having push token
     const eligibleUsers = usersSnapshot.docs
-      .map(doc => ({ ...doc.data() } as User))
+      .map((doc: QueryDocumentSnapshot) => ({ ...doc.data() } as User))
       .filter(user => 
         targetRoles.includes(user.role) && 
         user.pushToken && 
