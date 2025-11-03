@@ -82,7 +82,18 @@ export default function ParentEventsCalendar({
       if (!marked[dateKey]) {
         marked[dateKey] = {
           marked: true,
-          dotColor: "#3B82F6",
+          dotColor: "transparent", // Hide the dot
+          customStyles: {
+            container: {
+              borderWidth: 2,
+              borderColor: "#3B82F6",
+              borderRadius: 16,
+            },
+            text: {
+              color: "#3B82F6",
+              fontWeight: "bold",
+            },
+          },
         };
       }
     });
@@ -93,6 +104,7 @@ export default function ParentEventsCalendar({
         ...marked[selectedDate],
         selected: true,
         selectedColor: "#3B82F6",
+        customStyles: marked[selectedDate]?.customStyles || undefined,
       };
     }
 
@@ -115,12 +127,34 @@ export default function ParentEventsCalendar({
           marked: true,
           selected: true,
           selectedColor: "#3B82F6",
-          dotColor: "#FFFFFF",
+          dotColor: "transparent",
+          customStyles: {
+            container: {
+              borderWidth: 2,
+              borderColor: "#FFFFFF",
+              borderRadius: 16,
+            },
+            text: {
+              color: "#FFFFFF",
+              fontWeight: "bold",
+            },
+          },
         };
       } else {
         marked[eventDateKey] = {
           marked: true,
-          dotColor: "#3B82F6",
+          dotColor: "transparent",
+          customStyles: {
+            container: {
+              borderWidth: 2,
+              borderColor: "#3B82F6",
+              borderRadius: 16,
+            },
+            text: {
+              color: "#3B82F6",
+              fontWeight: "bold",
+            },
+          },
         };
       }
     });
@@ -203,7 +237,7 @@ export default function ParentEventsCalendar({
           {/* Info Box */}
           <Box bg="blue.50" p={3} borderRadius="md" borderWidth={1} borderColor="blue.200">
             <Text fontSize="sm" color="blue.800">
-              💡 Tap on a date with a blue dot to view events for that day
+              💡 Tap on a date with a blue circle to view events for that day
             </Text>
           </Box>
 
@@ -220,6 +254,7 @@ export default function ParentEventsCalendar({
               <Calendar
                 markedDates={markedDates}
                 onDayPress={handleDateSelect}
+                markingType="custom"
                 theme={{
                   backgroundColor: "#ffffff",
                   calendarBackground: "#ffffff",
