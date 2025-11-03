@@ -166,30 +166,107 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
     }, []);
 
     return (
-        <Box flex={1} bg="bg.900" px={6} py={12}>
-            <VStack space={6}>
-                {/* Header */}
-                <HStack justifyContent="space-between" alignItems="center">
-                    <VStack>
-                        <Heading color="white" size="xl">
-                            Admin Dashboard
-                        </Heading>
-                        <Text color="coolGray.400" fontSize="md">
-                            Welcome back, {userName || "Admin"}
-                        </Text>
-                    </VStack>
-                    <Button
-                        onPress={handleLogout}
-                        variant="outline"
-                        borderColor="red.500"
-                        _text={{ color: "red.500" }}
-                    >
-                        Logout
-                    </Button>
-                </HStack>
+        <Box flex={1} bg="bg.900" safeArea>
+            <ScrollView flex={1}>
+                <VStack space={6} px={6} py={12}>
+                    {/* Header */}
+                    <HStack justifyContent="space-between" alignItems="center">
+                        <VStack>
+                            <Heading color="white" size="xl">
+                                Admin Dashboard
+                            </Heading>
+                            <Text color="coolGray.400" fontSize="md">
+                                Welcome back, {userName || "Admin"}
+                            </Text>
+                        </VStack>
+                        <Button
+                            onPress={handleLogout}
+                            variant="outline"
+                            borderColor="red.500"
+                            _text={{ color: "red.500" }}
+                        >
+                            Logout
+                        </Button>
+                    </HStack>
 
-                {/* Dashboard Actions */}
-                <VStack space={4}>
+                    {/* Announcements Section */}
+                    <VStack space={4}>
+                        <HStack justifyContent="space-between" alignItems="center">
+                            <Heading color="white" size="lg">
+                                📢 Announcements
+                            </Heading>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onPress={() => onNavigateToCreateAnnouncement && onNavigateToCreateAnnouncement()}
+                                _text={{ color: "brand.500", fontWeight: "600" }}
+                            >
+                                Create New
+                            </Button>
+                        </HStack>
+
+                        {/* Announcements List */}
+                        {loadingAnnouncements ? (
+                            <Box py={6} alignItems="center">
+                                <Spinner size="sm" color="brand.500" />
+                            </Box>
+                        ) : announcements.length === 0 ? (
+                            <Box
+                                bg="coolGray.800"
+                                p={4}
+                                rounded="xl"
+                                borderWidth={1}
+                                borderColor="coolGray.700"
+                                alignItems="center"
+                            >
+                                <Text fontSize="2xl" mb={1}>
+                                    📭
+                                </Text>
+                                <Text color="coolGray.500" fontSize="sm" textAlign="center">
+                                    No announcements at this time
+                                </Text>
+                            </Box>
+                        ) : (
+                            <VStack space={3}>
+                                {announcements.map((announcement) => (
+                                    <Box
+                                        key={announcement.id}
+                                        bg="coolGray.800"
+                                        p={4}
+                                        rounded="xl"
+                                        borderWidth={1}
+                                        borderColor="coolGray.700"
+                                    >
+                                        <VStack space={2}>
+                                            <HStack justifyContent="space-between" alignItems="flex-start">
+                                                <Text
+                                                    color="white"
+                                                    fontSize="md"
+                                                    fontWeight="bold"
+                                                    flex={1}
+                                                >
+                                                    {announcement.title}
+                                                </Text>
+                                                <Text color="coolGray.500" fontSize="xs" ml={2}>
+                                                    {formatDate(announcement.createdAt)}
+                                                </Text>
+                                            </HStack>
+                                            <Text
+                                                color="coolGray.300"
+                                                fontSize="sm"
+                                                numberOfLines={2}
+                                            >
+                                                {announcement.body}
+                                            </Text>
+                                        </VStack>
+                                    </Box>
+                                ))}
+                            </VStack>
+                        )}
+                    </VStack>
+
+                    {/* Dashboard Actions */}
+                    <VStack space={4}>
                     {/* Manage Users Button */}
                     <Button
                         bg="purple.600"
@@ -289,13 +366,9 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
                     </Button>
 
                     {/* Placeholder for future features */}
-                    <Box bg="coolGray.800" p={4} rounded="xl" borderWidth={1} borderColor="coolGray.700">
-                        <Text color="coolGray.400" textAlign="center" fontWeight="500">
-                            More admin features coming soon!
-                        </Text>
-                    </Box>
                 </VStack>
-            </VStack>
+                </VStack>
+            </ScrollView>
         </Box>
     );
 }
