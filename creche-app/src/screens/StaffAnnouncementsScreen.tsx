@@ -18,6 +18,7 @@ import {
   Divider,
   Badge,
 } from "native-base";
+import { BackHandler } from "react-native";
 import { subscribeAnnouncements, Announcement } from "../services/announcements";
 
 type StaffAnnouncementsScreenProps = {
@@ -54,6 +55,21 @@ export default function StaffAnnouncementsScreen({
       unsubscribe();
     };
   }, []);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Format timestamp for display

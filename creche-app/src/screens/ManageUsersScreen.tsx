@@ -17,6 +17,7 @@ import {
   AlertDialog,
   Button,
 } from "native-base";
+import { BackHandler } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { fetchAllUsers, updateUserRole } from "../services/users";
 import { User, Role } from "../types/user";
@@ -45,6 +46,21 @@ export default function ManageUsersScreen({
   useEffect(() => {
     loadUsers();
   }, []);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Load users from Firestore

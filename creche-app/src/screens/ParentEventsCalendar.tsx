@@ -19,6 +19,7 @@ import {
   Divider,
   Badge,
 } from "native-base";
+import { BackHandler } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
 import { MaterialIcons } from "@expo/vector-icons";
 import { subscribeEvents, Event } from "../services/events";
@@ -70,6 +71,21 @@ export default function ParentEventsCalendar({
       unsubscribe();
     };
   }, []);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Update marked dates for calendar

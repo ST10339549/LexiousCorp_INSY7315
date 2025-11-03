@@ -12,6 +12,7 @@ import {
   Divider,
   Badge,
 } from "native-base";
+import { BackHandler } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { listenChildrenByParent, Child } from "../services/children";
 
@@ -50,6 +51,21 @@ export default function ParentChildren({
       unsubscribe();
     };
   }, [parentId]);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Calculate child's age from date of birth

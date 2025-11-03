@@ -16,6 +16,9 @@ import AnnouncementsScreen from "./src/screens/AnnouncementsScreen";
 import StaffAnnouncementsScreen from "./src/screens/StaffAnnouncementsScreen";
 import ManageEventsScreen from "./src/screens/ManageEventsScreen";
 import ParentEventsCalendar from "./src/screens/ParentEventsCalendar";
+import ManageMenuScreen from "./src/screens/ManageMenuScreen";
+import LunchOrderScreen from "./src/screens/LunchOrderScreen";
+import OrdersAdminScreen from "./src/screens/OrdersAdminScreen";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "./src/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -121,7 +124,7 @@ async function handleRegister(fullName: string, email: string, password: string)
 }
 
 export default function App() {
-  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements" | "manageEvents" | "parentEvents">("login");
+  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements" | "manageEvents" | "parentEvents" | "manageMenu" | "lunchOrders" | "viewOrders">("login");
   const [userName, setUserName] = useState<string>("");
   const [userRole, setUserRole] = useState<Role>("parent");
   const [userId, setUserId] = useState<string>("");
@@ -189,6 +192,21 @@ export default function App() {
     setMode("parentEvents");
   };
 
+  const handleNavigateToManageMenu = () => {
+    console.log("Navigating to Manage Menu Screen");
+    setMode("manageMenu");
+  };
+
+  const handleNavigateToLunchOrders = () => {
+    console.log("Navigating to Lunch Orders Screen");
+    setMode("lunchOrders");
+  };
+
+  const handleNavigateToViewOrders = () => {
+    console.log("Navigating to View Orders Screen");
+    setMode("viewOrders");
+  };
+
   const handleBackToAdminDashboard = () => {
     console.log("Navigating back to Admin Dashboard");
     setMode("admin");
@@ -249,6 +267,8 @@ export default function App() {
           onNavigateToAssignChildren={handleNavigateToAssignChildren}
           onNavigateToCreateAnnouncement={handleNavigateToCreateAnnouncement}
           onNavigateToManageEvents={handleNavigateToManageEvents}
+          onNavigateToManageMenu={handleNavigateToManageMenu}
+          onNavigateToViewOrders={handleNavigateToViewOrders}
         />
       ) : mode === "staff" ? (
         <StaffDashboard
@@ -337,6 +357,19 @@ export default function App() {
         <ParentEventsCalendar
           onBack={handleBackToParentHome}
         />
+      ) : mode === "manageMenu" ? (
+        <ManageMenuScreen
+          navigation={{ goBack: handleBackToAdminDashboard }}
+        />
+      ) : mode === "lunchOrders" ? (
+        <LunchOrderScreen
+          userId={userId}
+          onNavigateBack={handleBackToParentHome}
+        />
+      ) : mode === "viewOrders" ? (
+        <OrdersAdminScreen
+          onNavigateBack={handleBackToAdminDashboard}
+        />
       ) : (
         <ParentHome 
           userName={userName}
@@ -346,6 +379,7 @@ export default function App() {
           onNavigateToMyChildren={handleNavigateToParentChildren}
           onNavigateToAnnouncements={handleNavigateToAnnouncements}
           onNavigateToEvents={handleNavigateToParentEvents}
+          onNavigateToLunchOrders={handleNavigateToLunchOrders}
         />
       )}
     </AppContainer>

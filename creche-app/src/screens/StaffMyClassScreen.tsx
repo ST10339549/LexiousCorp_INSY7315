@@ -13,6 +13,7 @@ import {
   Badge,
   Divider,
 } from "native-base";
+import { BackHandler } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { getStaffAssignments, Assignment } from "../services/assignments";
 import { Child } from "../services/children";
@@ -42,6 +43,21 @@ export default function StaffMyClassScreen({
   useEffect(() => {
     loadAssignments();
   }, [staffId]);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Load assigned children

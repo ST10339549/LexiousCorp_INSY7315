@@ -17,6 +17,7 @@ import {
   Button,
   Divider,
 } from "native-base";
+import { BackHandler } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { fetchAllChildren, Child } from "../services/children";
 import { fetchAllUsers, User } from "../services/users";
@@ -49,6 +50,21 @@ export default function AssignChildrenScreen({
   useEffect(() => {
     loadData();
   }, []);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Load children, staff, and assignments

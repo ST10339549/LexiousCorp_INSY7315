@@ -14,6 +14,7 @@ import {
   IconButton,
   Icon,
 } from "native-base";
+import { BackHandler } from "react-native";
 import { collection, getDocs, doc, setDoc, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -63,6 +64,21 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
   useEffect(() => {
     fetchChildren();
   }, []);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Fetches all children from the 'children' collection in Firestore

@@ -29,6 +29,7 @@ type ParentHomeProps = {
   onNavigateToMyChildren?: () => void;
   onNavigateToAnnouncements?: () => void;
   onNavigateToEvents?: () => void;
+  onNavigateToLunchOrders?: () => void;
 };
 
 export default function ParentHome({
@@ -38,6 +39,7 @@ export default function ParentHome({
   onNavigateToAddChild,
   onNavigateToAnnouncements,
   onNavigateToEvents,
+  onNavigateToLunchOrders,
 }: ParentHomeProps) {
   const [children, setChildren] = useState<Child[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
@@ -294,6 +296,23 @@ export default function ParentHome({
                 <Text fontSize="xl">📅</Text>
                 <Text color="white" fontSize="md" fontWeight="500">
                   Events Calendar
+                </Text>
+              </HStack>
+            </Button>
+
+            <Button
+              bg="yellow.600"
+              rounded="xl"
+              py={4}
+              onPress={() =>
+                onNavigateToLunchOrders && onNavigateToLunchOrders()
+              }
+              _pressed={{ bg: "yellow.700" }}
+            >
+              <HStack space={3} alignItems="center">
+                <Text fontSize="xl">🍽️</Text>
+                <Text color="white" fontSize="md" fontWeight="500">
+                  Lunch Orders
                 </Text>
               </HStack>
             </Button>

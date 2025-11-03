@@ -18,7 +18,7 @@ import {
   WarningOutlineIcon,
   Alert,
 } from "native-base";
-import { KeyboardAvoidingView, Platform } from "react-native";
+import { KeyboardAvoidingView, Platform, BackHandler } from "react-native";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { addChildUnique, checkChildExists } from "../services/children";
@@ -82,6 +82,21 @@ export default function AddChildScreen({
       setSelectedParentId(userId);
     }
   }, [userRole, userId]);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Check for duplicate child when name and DOB are entered

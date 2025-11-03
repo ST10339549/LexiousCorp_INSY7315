@@ -5,7 +5,7 @@
  * Supports audience targeting and automatic push notifications.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   VStack,
@@ -21,6 +21,7 @@ import {
   ScrollView,
   FormControl,
 } from "native-base";
+import { BackHandler } from "react-native";
 import { createAnnouncement, AnnouncementAudience } from "../services/announcements";
 
 type CreateAnnouncementScreenProps = {
@@ -37,6 +38,21 @@ export default function CreateAnnouncementScreen({
   const [audience, setAudience] = useState<AnnouncementAudience>("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Handle form submission

@@ -14,9 +14,11 @@ type AdminDashboardProps = {
     onNavigateToAssignChildren?: () => void;
     onNavigateToCreateAnnouncement?: () => void;
     onNavigateToManageEvents?: () => void;
+    onNavigateToManageMenu?: () => void;
+    onNavigateToViewOrders?: () => void;
 };
 
-export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren, onNavigateToCreateAnnouncement, onNavigateToManageEvents }: AdminDashboardProps) {
+export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren, onNavigateToCreateAnnouncement, onNavigateToManageEvents, onNavigateToManageMenu, onNavigateToViewOrders }: AdminDashboardProps) {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
     const toast = useToast();
@@ -280,6 +282,38 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
                             <Text fontSize="xl">📅</Text>
                             <Text color="white" fontSize="md" fontWeight="500">
                                 Manage Events
+                            </Text>
+                        </HStack>
+                    </Button>
+
+                    {/* Manage Menu Button */}
+                    <Button
+                        bg="yellow.600"
+                        rounded="xl"
+                        py={4}
+                        onPress={() => onNavigateToManageMenu && onNavigateToManageMenu()}
+                        _pressed={{ bg: "yellow.700" }}
+                    >
+                        <HStack space={3} alignItems="center">
+                            <Text fontSize="xl">🍽️</Text>
+                            <Text color="white" fontSize="md" fontWeight="500">
+                                Manage Lunch Menu
+                            </Text>
+                        </HStack>
+                    </Button>
+
+                    {/* View Orders Button */}
+                    <Button
+                        bg="pink.600"
+                        rounded="xl"
+                        py={4}
+                        onPress={() => onNavigateToViewOrders && onNavigateToViewOrders()}
+                        _pressed={{ bg: "pink.700" }}
+                    >
+                        <HStack space={3} alignItems="center">
+                            <Text fontSize="xl">📦</Text>
+                            <Text color="white" fontSize="md" fontWeight="500">
+                                View Lunch Orders
                             </Text>
                         </HStack>
                     </Button>

@@ -27,6 +27,7 @@ import {
   FlatList,
   Center,
 } from "native-base";
+import { BackHandler } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import {
   createEvent,
@@ -123,6 +124,21 @@ export default function ManageEventsScreen({
       unsubscribe();
     };
   }, []);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Reset form
