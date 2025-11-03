@@ -63,7 +63,7 @@ export async function createAnnouncement(
   }
 
   // Validate audience
-  const validAudiences: AnnouncementAudience[] = ['all', 'parents', 'staff'];
+  const validAudiences: AnnouncementAudience[] = ['all', 'parents', 'staff', 'admin'];
   if (!validAudiences.includes(data.audience)) {
     throw new Error(
       `Invalid audience: ${data.audience}. Must be one of: ${validAudiences.join(', ')}`

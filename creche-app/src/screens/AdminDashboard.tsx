@@ -154,8 +154,8 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
                 setAnnouncements(updatedAnnouncements.slice(0, 3));
                 setLoadingAnnouncements(false);
             },
-            3, // Limit to 3 most recent announcements
-            "all" // Show all announcements for admin
+            3 // Limit to 3 most recent announcements
+            // No audience filter - admins see all announcements regardless of target audience
         );
 
         // Cleanup subscription on unmount
