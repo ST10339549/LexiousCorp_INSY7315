@@ -50,6 +50,8 @@ export default function LunchOrderScreen({ userId, onNavigateBack }: LunchOrderS
   const [submitting, setSubmitting] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showChildPicker, setShowChildPicker] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderMenuItems, setOrderMenuItems] = useState<{ [key: string]: MenuItem }>({});
 
   useEffect(() => {
     loadChildren();
@@ -252,6 +254,24 @@ export default function LunchOrderScreen({ userId, onNavigateBack }: LunchOrderS
     return child?.name || 'Unknown';
   };
 
+  const handleOrderClick = async (order: Order) => {
+    setSelectedOrder(order);
+    
+    // Fetch menu items for this order's week
+    try {
+      const orderMenu = await getActiveMenuForWeek(order.weekOf);
+      if (orderMenu) {
+        const itemsMap: { [key: string]: MenuItem } = {};
+        orderMenu.items.forEach(item => {
+          itemsMap[item.id] = item;
+        });
+        setOrderMenuItems(itemsMap);
+      }
+    } catch (error) {
+      console.error('Error loading menu for order:', error);
+    }
+  };
+
   if (children.length === 0) {
     return (
       <View style={styles.centered}>
@@ -276,6 +296,73 @@ export default function LunchOrderScreen({ userId, onNavigateBack }: LunchOrderS
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+      {/* Order Details Modal */}
+      <Modal
+        visible={selectedOrder !== null}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setSelectedOrder(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Order Receipt</Text>
+            {selectedOrder && (
+              <ScrollView style={styles.receiptScroll}>
+                <View style={styles.receiptHeader}>
+                  <Text style={styles.receiptTitle}>Week of {formatWeekString(selectedOrder.weekOf)}</Text>
+                  <Text style={styles.receiptChild}>Child: {getChildName(selectedOrder.childId)}</Text>
+                  <Text style={styles.receiptDate}>Placed: {selectedOrder.createdAt.toLocaleDateString()}</Text>
+                  <Text style={[
+                    styles.receiptStatus,
+                    selectedOrder.status === 'paid' && styles.statusPaid,
+                    selectedOrder.status === 'pending' && { color: '#FF9500' },
+                    selectedOrder.status === 'cancelled' && styles.statusCancelled,
+                  ]}>
+                    Status: {selectedOrder.status.toUpperCase()}
+                  </Text>
+                </View>
+
+                <View style={styles.divider} />
+
+                <Text style={styles.receiptSectionTitle}>Order Items:</Text>
+                {selectedOrder.selections.map((sel, index) => {
+                  const menuItem = orderMenuItems[sel.itemId];
+                  return (
+                    <View key={index} style={styles.receiptItem}>
+                      <View style={styles.receiptItemHeader}>
+                        <Text style={styles.receiptDay}>{sel.day}</Text>
+                        <Text style={styles.receiptQty}>Qty: {sel.qty}</Text>
+                      </View>
+                      <Text style={styles.receiptItemName}>
+                        {menuItem?.name || 'Item unavailable'}
+                      </Text>
+                      {menuItem && (
+                        <Text style={styles.receiptItemPrice}>
+                          R{menuItem.price.toFixed(2)} × {sel.qty} = R{(menuItem.price * sel.qty).toFixed(2)}
+                        </Text>
+                      )}
+                    </View>
+                  );
+                })}
+
+                <View style={styles.divider} />
+
+                <View style={styles.receiptTotal}>
+                  <Text style={styles.receiptTotalLabel}>Total Amount:</Text>
+                  <Text style={styles.receiptTotalAmount}>R{selectedOrder.total.toFixed(2)}</Text>
+                </View>
+              </ScrollView>
+            )}
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setSelectedOrder(null)}
+            >
+              <Text style={styles.modalCloseButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Child Picker Modal */}
       <Modal
         visible={showChildPicker}
@@ -345,7 +432,11 @@ export default function LunchOrderScreen({ userId, onNavigateBack }: LunchOrderS
             <Text style={styles.noOrdersText}>No orders yet</Text>
           ) : (
             orderHistory.map((order) => (
-              <View key={order.id} style={styles.orderCard}>
+              <TouchableOpacity 
+                key={order.id} 
+                style={styles.orderCard}
+                onPress={() => handleOrderClick(order)}
+              >
                 <Text style={styles.orderWeek}>
                   Week of {formatWeekString(order.weekOf)}
                 </Text>
@@ -367,7 +458,8 @@ export default function LunchOrderScreen({ userId, onNavigateBack }: LunchOrderS
                 <Text style={styles.orderDate}>
                   Placed: {order.createdAt.toLocaleDateString()}
                 </Text>
-              </View>
+                <Text style={styles.tapToView}>Tap to view receipt</Text>
+              </TouchableOpacity>
             ))
           )}
         </ScrollView>
@@ -909,5 +1001,99 @@ const styles = StyleSheet.create({
   orderDate: {
     fontSize: 12,
     color: '#999',
+  },
+  tapToView: {
+    fontSize: 12,
+    color: '#007AFF',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  receiptScroll: {
+    maxHeight: 400,
+  },
+  receiptHeader: {
+    marginBottom: 16,
+  },
+  receiptTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  receiptChild: {
+    fontSize: 15,
+    marginBottom: 4,
+    color: '#666',
+  },
+  receiptDate: {
+    fontSize: 13,
+    marginBottom: 4,
+    color: '#999',
+  },
+  receiptStatus: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    marginVertical: 12,
+  },
+  receiptSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+  },
+  receiptItem: {
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  receiptItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  receiptDay: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#007AFF',
+  },
+  receiptQty: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '600',
+  },
+  receiptItemName: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+    color: '#333',
+  },
+  receiptItemPrice: {
+    fontSize: 13,
+    color: '#666',
+  },
+  receiptTotal: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#007AFF10',
+    padding: 16,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  receiptTotalLabel: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  receiptTotalAmount: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#007AFF',
   },
 });
