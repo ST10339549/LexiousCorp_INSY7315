@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { StripeProvider } from '@stripe/stripe-react-native';
 import AppContainer from "./src/providers/AppContainer";
 import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegistrationScreen";
@@ -19,11 +20,14 @@ import ParentEventsCalendar from "./src/screens/ParentEventsCalendar";
 import ManageMenuScreen from "./src/screens/ManageMenuScreen";
 import LunchOrderScreen from "./src/screens/LunchOrderScreen";
 import OrdersAdminScreen from "./src/screens/OrdersAdminScreen";
+import PaymentsScreen from "./src/screens/PaymentsScreen";
+import ReceiptsScreen from "./src/screens/ReceiptsScreen";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "./src/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { registerForPushNotifications } from "./src/services/notifications";
 import { Role } from "./src/types/user";
+import { STRIPE_CONFIG } from "./src/config/stripe";
 
 async function handleLogin(email: string, password: string): Promise<{ role: string; userName: string; userId: string } | null> {
   try {
@@ -124,7 +128,7 @@ async function handleRegister(fullName: string, email: string, password: string)
 }
 
 export default function App() {
-  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements" | "manageEvents" | "parentEvents" | "manageMenu" | "lunchOrders" | "viewOrders">("login");
+  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements" | "manageEvents" | "parentEvents" | "manageMenu" | "lunchOrders" | "viewOrders" | "payments" | "receipts">("login");
   const [userName, setUserName] = useState<string>("");
   const [userRole, setUserRole] = useState<Role>("parent");
   const [userId, setUserId] = useState<string>("");
@@ -207,6 +211,16 @@ export default function App() {
     setMode("viewOrders");
   };
 
+  const handleNavigateToPayments = () => {
+    console.log("Navigating to Payments Screen");
+    setMode("payments");
+  };
+
+  const handleNavigateToReceipts = () => {
+    console.log("Navigating to Receipts Screen");
+    setMode("receipts");
+  };
+
   const handleBackToAdminDashboard = () => {
     console.log("Navigating back to Admin Dashboard");
     setMode("admin");
@@ -223,7 +237,11 @@ export default function App() {
   };
 
   return (
-    <AppContainer>
+    <StripeProvider
+      publishableKey={STRIPE_CONFIG.publishableKey}
+      merchantIdentifier={STRIPE_CONFIG.merchantDisplayName}
+    >
+      <AppContainer>
       {mode === "login" ? (
         <LoginScreen
           onLogin={async (email, password) => {
@@ -370,6 +388,16 @@ export default function App() {
         <OrdersAdminScreen
           onNavigateBack={handleBackToAdminDashboard}
         />
+      ) : mode === "payments" ? (
+        <PaymentsScreen
+          userId={userId}
+          onNavigateBack={handleBackToParentHome}
+        />
+      ) : mode === "receipts" ? (
+        <ReceiptsScreen
+          userId={userId}
+          onNavigateBack={handleBackToParentHome}
+        />
       ) : (
         <ParentHome 
           userName={userName}
@@ -380,8 +408,11 @@ export default function App() {
           onNavigateToAnnouncements={handleNavigateToAnnouncements}
           onNavigateToEvents={handleNavigateToParentEvents}
           onNavigateToLunchOrders={handleNavigateToLunchOrders}
+          onNavigateToPayments={handleNavigateToPayments}
+          onNavigateToReceipts={handleNavigateToReceipts}
         />
       )}
     </AppContainer>
+    </StripeProvider>
   );
 }

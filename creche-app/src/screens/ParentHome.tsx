@@ -30,6 +30,8 @@ type ParentHomeProps = {
   onNavigateToAnnouncements?: () => void;
   onNavigateToEvents?: () => void;
   onNavigateToLunchOrders?: () => void;
+  onNavigateToPayments?: () => void;
+  onNavigateToReceipts?: () => void;
 };
 
 export default function ParentHome({
@@ -40,6 +42,8 @@ export default function ParentHome({
   onNavigateToAnnouncements,
   onNavigateToEvents,
   onNavigateToLunchOrders,
+  onNavigateToPayments,
+  onNavigateToReceipts,
 }: ParentHomeProps) {
   const [children, setChildren] = useState<Child[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
@@ -313,6 +317,40 @@ export default function ParentHome({
                 <Text fontSize="xl">🍽️</Text>
                 <Text color="white" fontSize="md" fontWeight="500">
                   Lunch Orders
+                </Text>
+              </HStack>
+            </Button>
+
+            <Button
+              bg="blue.600"
+              rounded="xl"
+              py={4}
+              onPress={() =>
+                onNavigateToPayments && onNavigateToPayments()
+              }
+              _pressed={{ bg: "blue.700" }}
+            >
+              <HStack space={3} alignItems="center">
+                <Text fontSize="xl">💳</Text>
+                <Text color="white" fontSize="md" fontWeight="500">
+                  Payments
+                </Text>
+              </HStack>
+            </Button>
+
+            <Button
+              bg="purple.600"
+              rounded="xl"
+              py={4}
+              onPress={() =>
+                onNavigateToReceipts && onNavigateToReceipts()
+              }
+              _pressed={{ bg: "purple.700" }}
+            >
+              <HStack space={3} alignItems="center">
+                <Text fontSize="xl">🧾</Text>
+                <Text color="white" fontSize="md" fontWeight="500">
+                  Receipts
                 </Text>
               </HStack>
             </Button>
