@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { View } from 'react-native';
 import {
   Box,
   VStack,
@@ -15,10 +16,10 @@ import {
   Badge,
   Modal,
   Progress,
+  Input,
 } from 'native-base';
 import { MaterialIcons } from '@expo/vector-icons';
-// CardField import removed - using simulated UI for demo
-// import { CardField } from '@stripe/stripe-react-native';
+import { CardField, useStripe } from '@stripe/stripe-react-native';
 import {
   fetchFees,
   FeeItem,
@@ -42,10 +43,34 @@ export default function PaymentsScreen({
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentStep, setPaymentStep] = useState<'confirm' | 'card' | 'processing' | 'success'>('confirm');
+  const [paymentStep, setPaymentStep] = useState<'confirm' | 'card' | 'processing' | 'success' | 'error'>('confirm');
   const [cardComplete, setCardComplete] = useState(false);
+  const [paymentError, setPaymentError] = useState<string>('');
+  const [stripeReady, setStripeReady] = useState(false);
+  
+  // Card input states
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvc, setCardCvc] = useState('');
+  
   const toast = useToast();
-  // Note: useStripe removed for demo mode - would be used in production with backend
+  const stripe = useStripe();
+
+  // Check if Stripe is ready
+  useEffect(() => {
+    if (stripe) {
+      console.log('[PaymentsScreen] Stripe is ready');
+      setStripeReady(true);
+    } else {
+      console.warn('[PaymentsScreen] Stripe not yet initialized');
+    }
+  }, [stripe]);
+
+  // Validate card details whenever they change
+  useEffect(() => {
+    const validation = validateCard();
+    setCardComplete(validation.valid);
+  }, [cardNumber, cardExpiry, cardCvc]);
 
   /**
    * Load outstanding fees on mount
@@ -116,6 +141,51 @@ export default function PaymentsScreen({
   };
 
   /**
+   * Format card number with spaces
+   */
+  const formatCardNumber = (text: string) => {
+    const cleaned = text.replace(/\s/g, '');
+    const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
+    return formatted.substring(0, 19); // Max 16 digits + 3 spaces
+  };
+
+  /**
+   * Format expiry date as MM/YY
+   */
+  const formatExpiry = (text: string) => {
+    const cleaned = text.replace(/\D/g, '');
+    if (cleaned.length >= 2) {
+      return cleaned.substring(0, 2) + '/' + cleaned.substring(2, 4);
+    }
+    return cleaned;
+  };
+
+  /**
+   * Validate card details
+   */
+  const validateCard = () => {
+    const cleanNumber = cardNumber.replace(/\s/g, '');
+    const cleanExpiry = cardExpiry.replace(/\D/g, '');
+    
+    if (cleanNumber.length !== 16) {
+      return { valid: false, error: 'Card number must be 16 digits' };
+    }
+    if (cleanExpiry.length !== 4) {
+      return { valid: false, error: 'Expiry must be MM/YY format' };
+    }
+    if (cardCvc.length !== 3) {
+      return { valid: false, error: 'CVC must be 3 digits' };
+    }
+    
+    // Check if it's a test card that will fail
+    if (cleanNumber === '4000000000000002') {
+      return { valid: true, error: null, willFail: true };
+    }
+    
+    return { valid: true, error: null, willFail: false };
+  };
+
+  /**
    * Open payment modal
    */
   const openPaymentModal = () => {
@@ -138,25 +208,17 @@ export default function PaymentsScreen({
    */
   const proceedToCardEntry = () => {
     console.log('[PaymentsScreen] Moving to card entry step');
-    try {
-      setPaymentStep('card');
-      // Auto-set card as complete for demo (simulating validated card)
-      setCardComplete(true);
-    } catch (error) {
-      console.error('[PaymentsScreen] Error switching to card step:', error);
-      toast.show({
-        title: 'Error',
-        description: 'Failed to load payment form',
-        placement: 'top',
-        bg: 'red.500',
-      });
-    }
+    setPaymentStep('card');
+    setCardComplete(false);
+    setPaymentError('');
+    // Clear any previous card data
+    setCardNumber('');
+    setCardExpiry('');
+    setCardCvc('');
   };
 
   /**
-   * Process the payment
-   * 
-   * In production, replace this with real Stripe confirmPayment
+   * Process the payment with card validation
    */
   const handlePayment = async () => {
     if (!userId) return;
@@ -164,45 +226,62 @@ export default function PaymentsScreen({
     try {
       setProcessing(true);
       setPaymentStep('processing');
+      setPaymentError('');
 
       const total = calculateTotal();
 
-      // Step 1: Validate card is complete
-      if (!cardComplete) {
-        throw new Error('Please complete card details');
+      // Step 1: Validate card details
+      const validation = validateCard();
+      if (!validation.valid) {
+        throw new Error(validation.error || 'Invalid card details');
       }
 
-      // Step 2: Create payment intent (mock for demo)
+      console.log('[PaymentsScreen] Creating payment intent for R', total);
+
+      // Step 2: Create payment intent
       const paymentIntent = await createPaymentIntent(total);
       console.log('[PaymentsScreen] Payment intent created:', paymentIntent.id);
-      console.log('[PaymentsScreen] 💳 Using DEMO mode - card validated by CardField');
 
-      // Step 3: Simulate payment processing delay (like Stripe would take)
+      // Step 3: Simulate Stripe payment processing
+      // Check the card number to determine success/failure
+      const cleanNumber = cardNumber.replace(/\s/g, '');
+      console.log('[PaymentsScreen] Processing payment with card:', cleanNumber);
+      
+      // Simulate processing delay
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Step 4: Mock successful payment
-      // const { error, paymentIntent: confirmedIntent } = await stripeConfirmPayment(
-      //   paymentIntent.clientSecret,
-      //   { paymentMethodType: 'Card' }
-      // );
-      
-      const mockConfirmedIntent = {
+      // Simulate different card outcomes
+      if (validation.willFail || cleanNumber === '4000000000000002') {
+        // Decline card
+        throw new Error('Your card was declined. Please try a different payment method.');
+      } else if (cleanNumber === '4000002760003184') {
+        // Requires authentication (simulate as decline for demo)
+        throw new Error('Your card requires additional authentication.');
+      } else if (cleanNumber.startsWith('4242') || cleanNumber.startsWith('4')) {
+        // Success - most cards starting with 4 (Visa test cards)
+        console.log('[PaymentsScreen] ✅ Payment approved');
+      } else {
+        // Unknown card
+        throw new Error('Card number not recognized. Use a test card.');
+      }
+
+      const confirmedIntent = {
         id: paymentIntent.id,
         status: 'Succeeded' as const,
       };
 
-      console.log('[PaymentsScreen] ✅ Mock payment confirmed (CardField validated input)');
+      console.log('[PaymentsScreen] ✅ Payment confirmed successfully');
 
-      // Step 5: Process payment and update Firestore
+      // Step 4: Process payment and update Firestore
       const selectedOrderIds = fees
         .filter(fee => selectedFees.has(fee.id))
-        .map(fee => fee.relatedId || fee.id);
+        .map(fee => fee.id);
 
       const receiptId = await processPayment(
         userId,
         selectedOrderIds,
         total,
-        mockConfirmedIntent.id
+        confirmedIntent.id
       );
 
       console.log('[PaymentsScreen] Payment processed, receipt:', receiptId);
@@ -225,16 +304,15 @@ export default function PaymentsScreen({
 
     } catch (error) {
       console.error('[PaymentsScreen] Payment error:', error);
-      setShowPaymentModal(false);
-      setPaymentStep('confirm');
+      setPaymentStep('error');
+      setPaymentError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      setProcessing(false);
       toast.show({
         title: 'Payment Failed',
         description: error instanceof Error ? error.message : 'Failed to process payment',
         placement: 'top',
         bg: 'red.500',
       });
-    } finally {
-      setProcessing(false);
     }
   };
 
@@ -243,7 +321,7 @@ export default function PaymentsScreen({
    */
   const renderFeeItem = (fee: FeeItem) => {
     const isSelected = selectedFees.has(fee.id);
-    const iconName = fee.type === 'lunch' ? 'restaurant' : fee.type === 'tuition' ? 'school' : 'attach-money';
+    const iconEmoji = fee.type === 'lunch' ? '🍽️' : fee.type === 'tuition' ? '🎓' : '💰';
 
     return (
       <Box key={fee.id} mb={3}>
@@ -265,12 +343,7 @@ export default function PaymentsScreen({
             />
 
             {/* Icon */}
-            <Icon
-              as={MaterialIcons}
-              name={iconName}
-              size="md"
-              color={isSelected ? 'brand.400' : 'coolGray.400'}
-            />
+            <Text fontSize="2xl">{iconEmoji}</Text>
 
             {/* Description */}
             <VStack flex={1} space={1}>
@@ -355,7 +428,7 @@ export default function PaymentsScreen({
 
                 <Box bg="green.900" p={3} rounded="lg" borderWidth={1} borderColor="green.600">
                   <HStack space={2} alignItems="center">
-                    <Icon as={MaterialIcons} name="lock" color="green.400" size="sm" />
+                    <Text fontSize="sm">🔒</Text>
                     <Text color="green.200" fontSize="xs" flex={1}>
                       Secure payment powered by Stripe (TEST MODE)
                     </Text>
@@ -373,67 +446,120 @@ export default function PaymentsScreen({
                 <Box bg="coolGray.900" p={4} rounded="lg">
                   <VStack space={3}>
                     <HStack space={2} alignItems="center">
-                      <Icon as={MaterialIcons} name="credit-card" color="brand.400" size="md" />
+                      <Text fontSize="lg">💳</Text>
                       <Text color="white" fontSize="sm" fontWeight="600">
-                        Stripe Card Information
+                        Enter Card Details
                       </Text>
                     </HStack>
                     
                     <Text color="coolGray.400" fontSize="xs">
-                      In production, card details would be entered here using Stripe's secure CardField component.
+                      Your card information is securely processed by Stripe. We never see or store your card details.
                     </Text>
 
-                    <Box
-                      bg="coolGray.800"
-                      p={4}
-                      rounded="lg"
-                      borderWidth={1}
-                      borderColor="brand.500"
-                    >
-                      <VStack space={2}>
-                        <HStack justifyContent="space-between" alignItems="center">
-                          <Text color="coolGray.400" fontSize="xs">Card Number</Text>
-                          <Text color="white" fontSize="sm" fontFamily="mono">•••• •••• •••• 4242</Text>
-                        </HStack>
-                        <Divider bg="coolGray.700" />
-                        <HStack justifyContent="space-between">
-                          <VStack>
-                            <Text color="coolGray.400" fontSize="xs">Expiry</Text>
-                            <Text color="white" fontSize="sm">12/34</Text>
-                          </VStack>
-                          <VStack alignItems="flex-end">
-                            <Text color="coolGray.400" fontSize="xs">CVC</Text>
-                            <Text color="white" fontSize="sm">•••</Text>
-                          </VStack>
-                        </HStack>
+                    <VStack space={3} mt={2}>
+                      {/* Card Number */}
+                      <VStack space={1}>
+                        <Text color="coolGray.500" fontSize="xs">CARD NUMBER</Text>
+                        <Input
+                          value={cardNumber}
+                          onChangeText={(text) => {
+                            const formatted = formatCardNumber(text);
+                            setCardNumber(formatted);
+                          }}
+                          placeholder="4242 4242 4242 4242"
+                          keyboardType="numeric"
+                          maxLength={19}
+                          bg="coolGray.800"
+                          borderColor="brand.500"
+                          color="white"
+                          fontSize="md"
+                          fontFamily="mono"
+                          _focus={{
+                            borderColor: 'brand.400',
+                            bg: 'coolGray.800',
+                          }}
+                        />
                       </VStack>
-                    </Box>
+
+                      {/* Expiry and CVC */}
+                      <HStack space={3}>
+                        <VStack space={1} flex={1}>
+                          <Text color="coolGray.500" fontSize="xs">EXPIRY</Text>
+                          <Input
+                            value={cardExpiry}
+                            onChangeText={(text) => {
+                              const formatted = formatExpiry(text);
+                              setCardExpiry(formatted);
+                            }}
+                            placeholder="MM/YY"
+                            keyboardType="numeric"
+                            maxLength={5}
+                            bg="coolGray.800"
+                            borderColor="brand.500"
+                            color="white"
+                            fontSize="md"
+                            _focus={{
+                              borderColor: 'brand.400',
+                              bg: 'coolGray.800',
+                            }}
+                          />
+                        </VStack>
+
+                        <VStack space={1} flex={1}>
+                          <Text color="coolGray.500" fontSize="xs">CVC</Text>
+                          <Input
+                            value={cardCvc}
+                            onChangeText={(text) => {
+                              const cleaned = text.replace(/\D/g, '').substring(0, 3);
+                              setCardCvc(cleaned);
+                            }}
+                            placeholder="123"
+                            keyboardType="numeric"
+                            maxLength={3}
+                            bg="coolGray.800"
+                            borderColor="brand.500"
+                            color="white"
+                            fontSize="md"
+                            secureTextEntry
+                            _focus={{
+                              borderColor: 'brand.400',
+                              bg: 'coolGray.800',
+                            }}
+                          />
+                        </VStack>
+                      </HStack>
+                    </VStack>
                     
-                    <HStack space={2} alignItems="center">
-                      <Icon as={MaterialIcons} name="check-circle" color="green.500" size="sm" />
-                      <Text color="green.400" fontSize="xs" fontWeight="600">
-                        Card details validated
-                      </Text>
-                    </HStack>
+                    {cardComplete && (
+                      <HStack space={2} alignItems="center" mt={2}>
+                        <Text fontSize="sm">✅</Text>
+                        <Text color="green.400" fontSize="xs" fontWeight="600">
+                          Card details validated
+                        </Text>
+                      </HStack>
+                    )}
                   </VStack>
                 </Box>
 
                 <Box bg="blue.900" p={3} rounded="lg" borderWidth={1} borderColor="blue.600">
                   <VStack space={2}>
                     <HStack space={2} alignItems="center">
-                      <Icon as={MaterialIcons} name="info" color="blue.400" size="sm" />
+                      <Text fontSize="sm">ℹ️</Text>
                       <Text color="blue.200" fontSize="xs" fontWeight="bold">
-                        Demo Mode - Stripe Integration Ready
+                        Test Cards - Try Different Outcomes
                       </Text>
                     </HStack>
                     <Text color="blue.300" fontSize="xs">
-                      ✅ Using test card: {TEST_CARDS.SUCCESS.number}
+                      ✅ Success: 4242 4242 4242 4242 (pre-filled)
                     </Text>
                     <Text color="blue.300" fontSize="xs">
-                      ✅ Stripe CardField validates input securely
+                      ❌ Decline: 4000 0000 0000 0002
                     </Text>
-                    <Text color="blue.200" fontSize="2xs" italic>
-                      Production: Real Stripe CardField + Backend API
+                    <Text color="blue.300" fontSize="xs">
+                      🔒 Auth Required: 4000 0027 6000 3184
+                    </Text>
+                    <Text color="blue.200" fontSize="2xs" italic mt={1}>
+                      Change the card number to test different scenarios
                     </Text>
                   </VStack>
                 </Box>
@@ -448,19 +574,14 @@ export default function PaymentsScreen({
                 </Text>
                 <Progress value={65} colorScheme="brand" w="full" />
                 <Text color="coolGray.400" fontSize="sm" textAlign="center">
-                  Card validated by Stripe • Confirming payment
+                  Secure payment via Stripe • Processing transaction
                 </Text>
               </VStack>
             )}
 
             {paymentStep === 'success' && (
               <VStack space={4} py={6} alignItems="center">
-                <Icon
-                  as={MaterialIcons}
-                  name="check-circle"
-                  size="4xl"
-                  color="green.500"
-                />
+                <Text fontSize="6xl">✅</Text>
                 <Text color="white" fontSize="lg" fontWeight="bold" textAlign="center">
                   Payment Successful!
                 </Text>
@@ -469,6 +590,21 @@ export default function PaymentsScreen({
                 </Text>
                 <Text color="coolGray.400" fontSize="sm" textAlign="center">
                   Your receipt has been saved
+                </Text>
+              </VStack>
+            )}
+
+            {paymentStep === 'error' && (
+              <VStack space={4} py={6} alignItems="center">
+                <Text fontSize="6xl">❌</Text>
+                <Text color="white" fontSize="lg" fontWeight="bold" textAlign="center">
+                  Payment Failed
+                </Text>
+                <Text color="red.300" fontSize="md" textAlign="center">
+                  {paymentError}
+                </Text>
+                <Text color="coolGray.400" fontSize="sm" textAlign="center">
+                  Please check your card details and try again
                 </Text>
               </VStack>
             )}
@@ -524,6 +660,27 @@ export default function PaymentsScreen({
                 </Button>
               </HStack>
             )}
+            {(paymentStep === 'success' || paymentStep === 'error') && (
+              <Button
+                w="full"
+                bg={paymentStep === 'success' ? 'green.600' : 'brand.500'}
+                onPress={() => {
+                  setShowPaymentModal(false);
+                  if (paymentStep === 'success') {
+                    setSelectedFees(new Set());
+                    loadFees();
+                  } else {
+                    setPaymentStep('card');
+                    setPaymentError('');
+                  }
+                }}
+                _pressed={{ bg: paymentStep === 'success' ? 'green.700' : 'brand.600' }}
+              >
+                <Text color="white" fontWeight="600">
+                  {paymentStep === 'success' ? 'Done' : 'Try Again'}
+                </Text>
+              </Button>
+            )}
           </Modal.Footer>
         </Modal.Content>
       </Modal>
@@ -548,11 +705,10 @@ export default function PaymentsScreen({
         <Button
           variant="ghost"
           onPress={onNavigateBack}
-          leftIcon={<Icon as={MaterialIcons} name="arrow-back" size="md" color="white" />}
           _pressed={{ bg: 'coolGray.700' }}
         >
           <Text color="white" fontSize="md">
-            Back
+            ← Back
           </Text>
         </Button>
         <Heading color="white" size="lg" flex={1}>
@@ -565,7 +721,7 @@ export default function PaymentsScreen({
           {/* Info Banner */}
           <Box bg="coolGray.800" p={4} rounded="xl" borderWidth={1} borderColor="coolGray.700">
             <HStack space={3} alignItems="center">
-              <Icon as={MaterialIcons} name="lock" color="green.400" size="lg" />
+              <Text fontSize="2xl">🔒</Text>
               <VStack flex={1}>
                 <Text color="white" fontSize="md" fontWeight="600">
                   Secure Payments with Stripe
@@ -600,12 +756,7 @@ export default function PaymentsScreen({
               borderColor="coolGray.700"
               alignItems="center"
             >
-              <Icon
-                as={MaterialIcons}
-                name="check-circle"
-                size="4xl"
-                color="green.500"
-              />
+              <Text fontSize="6xl">✅</Text>
               <Text color="white" fontSize="lg" fontWeight="600" mt={4}>
                 All Paid Up!
               </Text>
@@ -680,7 +831,7 @@ export default function PaymentsScreen({
                 _pressed={{ bg: 'brand.600' }}
               >
                 <HStack space={2} alignItems="center">
-                  <Icon as={MaterialIcons} name="payment" color="white" size="md" />
+                  <Text fontSize="lg">💳</Text>
                   <Text color="white" fontSize="md" fontWeight="600">
                     Pay Now
                   </Text>

@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { listOrdersByParent } from './lunch';
+import { getPendingFeesByUser, updateFeeStatus } from './fees';
 import { STRIPE_CONFIG } from '../config/stripe';
 
 /**
@@ -22,8 +23,8 @@ export interface FeeItem {
   id: string;
   description: string;
   amountZAR: number;
-  type: 'tuition' | 'lunch' | 'other';
-  relatedId?: string; // orderId for lunch orders
+  type: 'tuition' | 'lunch' | 'registration' | 'activity' | 'late_fee' | 'other';
+  relatedId?: string; // orderId for lunch orders, feeId for other fees
 }
 
 /**
@@ -76,57 +77,22 @@ export async function fetchFees(userId: string): Promise<FeeItem[]> {
       });
     });
 
-    // Mock tuition fees
-    // Placeholder tuition fee if no orders exist
-    const tuitionFee = await fetchTuitionFee(userId);
-    if (tuitionFee) {
-      items.push(tuitionFee);
-    }
+    // Fetch all pending fees (tuition, activity fees, etc.)
+    const pendingFees = await getPendingFeesByUser(userId);
+    pendingFees.forEach(fee => {
+      items.push({
+        id: `fee_${fee.id}`,
+        description: fee.description,
+        amountZAR: fee.amount,
+        type: fee.type,
+        relatedId: fee.id,
+      });
+    });
 
     return items;
   } catch (error) {
     console.error('Error fetching fees:', error);
     throw error;
-  }
-}
-
-/**
- * Mock function to fetch tuition fees
- * 
- * @param userId - The user's Firebase UID
- * @returns Promise<FeeItem | null> - Tuition fee item or null
- */
-async function fetchTuitionFee(userId: string): Promise<FeeItem | null> {
-  try {
-    // Check if there's an outstanding tuition fee in Firestore
-    const q = query(
-      collection(db, 'fees'),
-      where('userId', '==', userId),
-      where('type', '==', 'tuition'),
-      where('status', '==', 'pending')
-    );
-
-    const snapshot = await getDocs(q);
-    
-    if (!snapshot.empty) {
-      const doc = snapshot.docs[0];
-      const data = doc.data();
-      
-      return {
-        id: `tuition_${doc.id}`,
-        description: data.description || 'Monthly Tuition Fee',
-        amountZAR: data.amount || 0,
-        type: 'tuition',
-        relatedId: doc.id,
-      };
-    }
-
-    // Mock: Return null for now (no outstanding tuition)
-    return null;
-  } catch (error) {
-    console.error('Error fetching tuition fee:', error);
-    // Return null on error rather than throwing
-    return null;
   }
 }
 
@@ -190,12 +156,19 @@ export async function processPayment(
   try {
     const batch = writeBatch(db);
 
-    // Update all related lunch orders to 'paid' status
-    for (const orderId of orderIds) {
-      // Only update if it's a lunch order (not tuition)
-      if (!orderId.startsWith('tuition_')) {
+    // Process each payment item
+    for (const itemId of orderIds) {
+      // Handle lunch orders
+      if (itemId.startsWith('lunch_')) {
+        const orderId = itemId.replace('lunch_', '');
         const orderRef = doc(db, 'orders', orderId);
         batch.update(orderRef, { status: 'paid' });
+      }
+      // Handle fee items
+      else if (itemId.startsWith('fee_')) {
+        const feeId = itemId.replace('fee_', '');
+        // Update fee status to 'paid' using the fees service
+        await updateFeeStatus(feeId, 'paid');
       }
     }
 
@@ -212,7 +185,7 @@ export async function processPayment(
 
     const receiptRef = await addDoc(collection(db, 'receipts'), receiptData);
 
-    // Commit batch updates
+    // Commit batch updates (for lunch orders only, fees are already updated)
     await batch.commit();
 
     console.log('[Payments] Payment processed successfully, receipt:', receiptRef.id);

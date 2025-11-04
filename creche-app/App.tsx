@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { BackHandler, Alert } from "react-native";
 import { StripeProvider } from '@stripe/stripe-react-native';
 import AppContainer from "./src/providers/AppContainer";
 import LoginScreen from "./src/screens/LoginScreen";
@@ -22,6 +23,7 @@ import LunchOrderScreen from "./src/screens/LunchOrderScreen";
 import OrdersAdminScreen from "./src/screens/OrdersAdminScreen";
 import PaymentsScreen from "./src/screens/PaymentsScreen";
 import ReceiptsScreen from "./src/screens/ReceiptsScreen";
+import ManageFeesScreen from "./src/screens/ManageFeesScreen";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "./src/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -128,7 +130,7 @@ async function handleRegister(fullName: string, email: string, password: string)
 }
 
 export default function App() {
-  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements" | "manageEvents" | "parentEvents" | "manageMenu" | "lunchOrders" | "viewOrders" | "payments" | "receipts">("login");
+  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements" | "manageEvents" | "parentEvents" | "manageMenu" | "lunchOrders" | "viewOrders" | "payments" | "receipts" | "manageFees">("login");
   const [userName, setUserName] = useState<string>("");
   const [userRole, setUserRole] = useState<Role>("parent");
   const [userId, setUserId] = useState<string>("");
@@ -221,6 +223,11 @@ export default function App() {
     setMode("receipts");
   };
 
+  const handleNavigateToManageFees = () => {
+    console.log("Navigating to Manage Fees Screen");
+    setMode("manageFees");
+  };
+
   const handleBackToAdminDashboard = () => {
     console.log("Navigating back to Admin Dashboard");
     setMode("admin");
@@ -235,6 +242,53 @@ export default function App() {
     console.log("Navigating back to Parent Home");
     setMode("parent");
   };
+
+  // Handle Android back button
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      // Handle back button based on current mode
+      if (mode === 'login' || mode === 'register') {
+        // On login or register screen, show exit confirmation
+        Alert.alert(
+          'Exit App',
+          'Are you sure you want to exit?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Exit', onPress: () => BackHandler.exitApp() }
+          ]
+        );
+        return true; // Prevent default behavior
+      } else if (mode === 'admin' || mode === 'staff' || mode === 'parent') {
+        // On main dashboard screens, show logout confirmation
+        Alert.alert(
+          'Logout',
+          'Do you want to logout?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Logout', onPress: handleLogout }
+          ]
+        );
+        return true; // Prevent default behavior
+      } else {
+        // On sub-screens, navigate back to appropriate dashboard
+        if (mode === 'attendance' || mode === 'addChild' || mode === 'manageUsers' || 
+            mode === 'assignChildren' || mode === 'createAnnouncement' || 
+            mode === 'manageEvents' || mode === 'manageMenu' || mode === 'viewOrders' || 
+            mode === 'manageFees') {
+          handleBackToAdminDashboard();
+        } else if (mode === 'staffMyClass' || mode === 'staffAnnouncements') {
+          handleBackToStaffDashboard();
+        } else if (mode === 'parentChildren' || mode === 'announcements' || 
+                   mode === 'parentEvents' || mode === 'lunchOrders' || 
+                   mode === 'payments' || mode === 'receipts') {
+          handleBackToParentHome();
+        }
+        return true; // Prevent default behavior
+      }
+    });
+
+    return () => backHandler.remove();
+  }, [mode]);
 
   return (
     <StripeProvider
@@ -287,6 +341,7 @@ export default function App() {
           onNavigateToManageEvents={handleNavigateToManageEvents}
           onNavigateToManageMenu={handleNavigateToManageMenu}
           onNavigateToViewOrders={handleNavigateToViewOrders}
+          onNavigateToManageFees={handleNavigateToManageFees}
         />
       ) : mode === "staff" ? (
         <StaffDashboard
@@ -398,6 +453,8 @@ export default function App() {
           userId={userId}
           onNavigateBack={handleBackToParentHome}
         />
+      ) : mode === "manageFees" ? (
+        <ManageFeesScreen />
       ) : (
         <ParentHome 
           userName={userName}

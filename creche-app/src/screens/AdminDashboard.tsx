@@ -16,9 +16,10 @@ type AdminDashboardProps = {
     onNavigateToManageEvents?: () => void;
     onNavigateToManageMenu?: () => void;
     onNavigateToViewOrders?: () => void;
+    onNavigateToManageFees?: () => void;
 };
 
-export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren, onNavigateToCreateAnnouncement, onNavigateToManageEvents, onNavigateToManageMenu, onNavigateToViewOrders }: AdminDashboardProps) {
+export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren, onNavigateToCreateAnnouncement, onNavigateToManageEvents, onNavigateToManageMenu, onNavigateToViewOrders, onNavigateToManageFees }: AdminDashboardProps) {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
     const toast = useToast();
@@ -311,9 +312,25 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
                         _pressed={{ bg: "pink.700" }}
                     >
                         <HStack space={3} alignItems="center">
-                            <Text fontSize="xl">📦</Text>
+                            <Text fontSize="xl">�</Text>
                             <Text color="white" fontSize="md" fontWeight="500">
                                 View Lunch Orders
+                            </Text>
+                        </HStack>
+                    </Button>
+
+                    {/* Manage Fees Button */}
+                    <Button
+                        bg="purple.600"
+                        rounded="xl"
+                        py={4}
+                        onPress={() => onNavigateToManageFees && onNavigateToManageFees()}
+                        _pressed={{ bg: "purple.700" }}
+                    >
+                        <HStack space={3} alignItems="center">
+                            <Text fontSize="xl">💰</Text>
+                            <Text color="white" fontSize="md" fontWeight="500">
+                                Manage Fees
                             </Text>
                         </HStack>
                     </Button>

@@ -12,6 +12,7 @@
     "@expo/metro-runtime": "~3.2.1",
     "@hookform/resolvers": "^3.3.4",
     "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native-picker/picker": "^2.11.4",
     "@stripe/stripe-react-native": "^0.55.1",
     "expo": "~51.0.39",
     "expo-constants": "~16.0.2",
