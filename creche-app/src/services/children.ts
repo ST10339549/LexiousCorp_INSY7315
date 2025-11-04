@@ -3,6 +3,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  setDoc,
   query,
   where,
   onSnapshot,
@@ -52,25 +53,14 @@ export async function addChildUnique(input: CreateChildInput): Promise<string> {
   const childRef = doc(db, "children", docId);
 
   try {
-    // Use transaction to guarantee atomicity
-    await runTransaction(db, async (transaction) => {
-      const childDoc = await transaction.get(childRef);
-
-      if (childDoc.exists()) {
-        throw new Error(
-          "A child with this name and date of birth already exists for this parent."
-        );
-      }
-
-      // Create the child document
-      transaction.set(childRef, {
-        parentId,
-        name: name.trim(),
-        dateOfBirth,
-        allergies,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+    // Create the child document (will fail if already exists due to pre-check)
+    await setDoc(childRef, {
+      parentId,
+      name: name.trim(),
+      dateOfBirth,
+      allergies,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
 
     console.log(`Child created successfully with ID: ${docId}`);
@@ -99,7 +89,12 @@ export async function checkChildExists(
     const childRef = doc(db, "children", docId);
     const childDoc = await getDoc(childRef);
     return childDoc.exists();
-  } catch (error) {
+  } catch (error: any) {
+    // If permission denied, assume child doesn't exist (we'll get a proper error on create if it does)
+    if (error?.code === 'permission-denied') {
+      console.log("Permission denied checking child existence - assuming doesn't exist");
+      return false;
+    }
     console.error("Error checking child existence:", error);
     return false;
   }

@@ -17,7 +17,8 @@ import {
   AlertDialog,
   Button,
 } from "native-base";
-import { MaterialIcons } from "@expo/vector-icons";
+import { BackHandler } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { fetchAllUsers, updateUserRole } from "../services/users";
 import { User, Role } from "../types/user";
 
@@ -45,6 +46,21 @@ export default function ManageUsersScreen({
   useEffect(() => {
     loadUsers();
   }, []);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Load users from Firestore
@@ -158,24 +174,24 @@ export default function ManageUsersScreen({
 
     return (
       <Box key={user.uid} mb={3}>
-        <Box bg="coolGray.800" rounded="xl" p={4} shadow={2}>
+        <Box bg="white" rounded="xl" p={4} shadow={2}>
           <VStack space={3}>
             {/* User Info Header */}
             <HStack justifyContent="space-between" alignItems="center">
               <VStack flex={1} mr={3}>
                 <HStack alignItems="center" space={2}>
-                  <Heading color="white" size="md">
+                  <Heading color="gray.800" size="md">
                     {user.name}
                   </Heading>
                   {isCurrentUser && (
                     <Badge bg="purple.500" rounded="md" px={2}>
-                      <Text color="white" fontSize="xs" fontWeight="600">
+                      <Text color="gray.800" fontSize="xs" fontWeight="600">
                         YOU
                       </Text>
                     </Badge>
                   )}
                 </HStack>
-                <Text color="coolGray.400" fontSize="sm">
+                <Text color="gray.600" fontSize="sm">
                   {user.email}
                 </Text>
               </VStack>
@@ -187,7 +203,7 @@ export default function ManageUsersScreen({
                 px={3}
                 py={1}
               >
-                <Text color="white" fontSize="xs" fontWeight="600">
+                <Text color="gray.800" fontSize="xs" fontWeight="600">
                   {user.role.toUpperCase()}
                 </Text>
               </Badge>
@@ -195,7 +211,7 @@ export default function ManageUsersScreen({
 
             {/* Role Selector */}
             <HStack alignItems="center" space={3}>
-              <Text color="coolGray.300" fontSize="sm" fontWeight="500">
+              <Text color="gray.700" fontSize="sm" fontWeight="500">
                 Change Role:
               </Text>
               <Box flex={1}>
@@ -206,14 +222,14 @@ export default function ManageUsersScreen({
                   onValueChange={(value) =>
                     handleRoleChange(user, value as Role)
                   }
-                  bg="coolGray.700"
-                  color="white"
-                  borderColor="coolGray.600"
+                  bg="gray.100"
+                  color="gray.800"
+                  borderColor="gray.300"
                   rounded="lg"
                   isDisabled={isCurrentUser || isUpdating}
                   _selectedItem={{
                     bg: "brand.500",
-                    endIcon: <CheckIcon size="5" color="white" />,
+                    endIcon: <CheckIcon size="5" color="gray.800" />,
                   }}
                   _actionSheetContent={{
                     bg: "coolGray.800",
@@ -225,14 +241,14 @@ export default function ManageUsersScreen({
                 </Select>
               </Box>
 
-              {isUpdating && <Spinner size="sm" color="brand.500" />}
+              {isUpdating && <Spinner size="sm" color="primary.400" />}
             </HStack>
 
             {/* Warning for current user */}
             {isCurrentUser && (
               <Box bg="orange.900" p={2} rounded="md" borderWidth={1} borderColor="orange.600">
                 <HStack space={2} alignItems="center">
-                  <Icon as={MaterialIcons} name="info" size="sm" color="orange.400" />
+                  <Icon as={Ionicons} name="information-circle-outline" size="sm" color="orange.400" />
                   <Text color="orange.200" fontSize="xs">
                     You cannot change your own role
                   </Text>
@@ -246,19 +262,19 @@ export default function ManageUsersScreen({
   };
 
   return (
-    <Box flex={1} bg="coolGray.900" safeArea>
+    <Box flex={1} bg="#F7F9FC" safeArea>
       {/* Header */}
-      <Box bg="coolGray.800" px={6} py={4} shadow={3}>
+      <Box bg="white" px={6} py={4} shadow={3}>
         <VStack space={2}>
           <HStack alignItems="center" space={3}>
             {onBack && (
               <IconButton
                 icon={
                   <Icon
-                    as={MaterialIcons}
+                    as={Ionicons}
                     name="arrow-back"
                     size="lg"
-                    color="white"
+                    color="gray.800"
                   />
                 }
                 onPress={onBack}
@@ -266,16 +282,16 @@ export default function ManageUsersScreen({
                 _pressed={{ bg: "coolGray.700" }}
               />
             )}
-            <Heading color="white" size="xl" flex={1}>
+            <Heading color="gray.800" size="xl" flex={1}>
               Manage Users
             </Heading>
           </HStack>
           <HStack justifyContent="space-between" alignItems="center">
-            <Text color="coolGray.400" fontSize="md">
+            <Text color="gray.600" fontSize="md">
               Assign roles to users
             </Text>
-            <Badge bg="brand.500" px={3} py={1} rounded="full">
-              <Text color="white" fontSize="xs" fontWeight="600">
+            <Badge bg="primary.400" px={3} py={1} rounded="full">
+              <Text color="gray.800" fontSize="xs" fontWeight="600">
                 {users.length} {users.length === 1 ? "User" : "Users"}
               </Text>
             </Badge>
@@ -286,8 +302,8 @@ export default function ManageUsersScreen({
       {/* Users List */}
       {loading ? (
         <Box flex={1} justifyContent="center" alignItems="center">
-          <Spinner size="lg" color="brand.500" />
-          <Text color="coolGray.400" mt={4} fontSize="md">
+          <Spinner size="lg" color="primary.400" />
+          <Text color="gray.600" mt={4} fontSize="md">
             Loading users...
           </Text>
         </Box>
@@ -296,12 +312,12 @@ export default function ManageUsersScreen({
           {users.length === 0 ? (
             <Box mt={10} alignItems="center">
               <Icon
-                as={MaterialIcons}
-                name="people"
+                as={Ionicons}
+                name="people-outline"
                 size="4xl"
-                color="coolGray.600"
+                color="gray.600"
               />
-              <Text color="coolGray.500" fontSize="lg" mt={4} textAlign="center">
+              <Text color="gray.500" fontSize="lg" mt={4} textAlign="center">
                 No users found
               </Text>
             </Box>
@@ -319,17 +335,17 @@ export default function ManageUsersScreen({
         isOpen={confirmDialogOpen}
         onClose={() => setConfirmDialogOpen(false)}
       >
-        <AlertDialog.Content bg="coolGray.800">
+        <AlertDialog.Content bg="white">
           <AlertDialog.CloseButton />
-          <AlertDialog.Header bg="coolGray.800" borderBottomWidth={0}>
-            <Text color="white" fontSize="lg" fontWeight="600">
+          <AlertDialog.Header bg="white" borderBottomWidth={0}>
+            <Text color="gray.800" fontSize="lg" fontWeight="600">
               Confirm Role Change
             </Text>
           </AlertDialog.Header>
-          <AlertDialog.Body bg="coolGray.800">
-            <Text color="coolGray.300">
+          <AlertDialog.Body bg="white">
+            <Text color="gray.700">
               Are you sure you want to change{" "}
-              <Text color="white" fontWeight="600">
+              <Text color="gray.800" fontWeight="600">
                 {selectedUser?.name}
               </Text>
               's role from{" "}
@@ -343,7 +359,7 @@ export default function ManageUsersScreen({
               ?
             </Text>
           </AlertDialog.Body>
-          <AlertDialog.Footer bg="coolGray.800" borderTopWidth={0}>
+          <AlertDialog.Footer bg="white" borderTopWidth={0}>
             <Button.Group space={2}>
               <Button
                 variant="outline"
@@ -353,7 +369,7 @@ export default function ManageUsersScreen({
               >
                 Cancel
               </Button>
-              <Button bg="brand.500" onPress={confirmRoleUpdate}>
+              <Button bg="primary.400" onPress={confirmRoleUpdate}>
                 Confirm
               </Button>
             </Button.Group>

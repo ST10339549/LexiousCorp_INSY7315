@@ -363,3 +363,30 @@ export async function sendEmergencyAlert(
     }
   );
 }
+
+/**
+ * Send absence notification to parent when their child is marked absent
+ * 
+ * @param pushToken - Parent's Expo Push Token
+ * @param childName - Child's name
+ * @param date - Date of absence (formatted string)
+ * @returns Promise<boolean>
+ */
+export async function sendAbsenceNotification(
+  pushToken: string,
+  childName: string,
+  date: string
+): Promise<boolean> {
+  return sendPushNotification(
+    pushToken,
+    '⚠️ Child Absence Alert',
+    `${childName} has been marked absent on ${date}`,
+    {
+      type: 'absence_alert',
+      childName,
+      date,
+      timestamp: new Date().toISOString(),
+      screen: 'ParentHome',
+    }
+  );
+}

@@ -16,5 +16,13 @@ export {
   sendAttendanceReminder,
   sendPickupNotification,
   sendEmergencyAlert,
+  sendAbsenceNotification,
   type ExpoPushMessage,
 } from './sendNotification';
+
+export {
+  listenParentNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  type Notification,
+} from './notificationListener';

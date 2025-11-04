@@ -13,7 +13,8 @@ import {
   Badge,
   Divider,
 } from "native-base";
-import { MaterialIcons } from "@expo/vector-icons";
+import { BackHandler } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { getStaffAssignments, Assignment } from "../services/assignments";
 import { Child } from "../services/children";
 import { User } from "../services/users";
@@ -42,6 +43,21 @@ export default function StaffMyClassScreen({
   useEffect(() => {
     loadAssignments();
   }, [staffId]);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Load assigned children
@@ -111,20 +127,20 @@ export default function StaffMyClassScreen({
 
     return (
       <Box key={assignment.id} mb={3}>
-        <Box bg="coolGray.800" rounded="xl" p={4} shadow={2}>
+        <Box bg="white" rounded="xl" p={4} shadow={2}>
           <VStack space={2}>
             {/* Child Name */}
             <HStack justifyContent="space-between" alignItems="center">
-              <Heading color="white" size="md">
+              <Heading color="gray.800" size="md">
                 {assignment.childName}
               </Heading>
-              <Icon as={MaterialIcons} name="check-circle" size="md" color="green.400" />
+              <Icon as={Ionicons} name="checkmark-circle" size="md" color="green.400" />
             </HStack>
 
             {/* Parent Name */}
             {parent && (
               <HStack space={2} alignItems="center">
-                <Icon as={MaterialIcons} name="person" size="sm" color="purple.400" />
+                <Icon as={Ionicons} name="person" size="sm" color="purple.400" />
                 <Text color="purple.400" fontSize="sm" fontWeight="500">
                   Parent: {parent.name}
                 </Text>
@@ -134,8 +150,8 @@ export default function StaffMyClassScreen({
             {/* Date of Birth */}
             {child?.dateOfBirth && (
               <HStack space={2} alignItems="center">
-                <Icon as={MaterialIcons} name="cake" size="sm" color="coolGray.400" />
-                <Text color="coolGray.400" fontSize="sm">
+                <Icon as={Ionicons} name="calendar-outline" size="sm" color="gray.600" />
+                <Text color="gray.600" fontSize="sm">
                   DOB: {new Date(child.dateOfBirth).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
@@ -148,14 +164,14 @@ export default function StaffMyClassScreen({
             {/* Allergies */}
             {child?.allergies && child.allergies.length > 0 && (
               <HStack space={2} alignItems="center" flexWrap="wrap">
-                <Icon as={MaterialIcons} name="warning" size="sm" color="red.400" />
+                <Icon as={Ionicons} name="warning" size="sm" color="red.400" />
                 <Text color="red.400" fontSize="sm" fontWeight="600">
                   Allergies:
                 </Text>
                 <HStack space={1} flexWrap="wrap">
                   {child.allergies.map((allergy, index) => (
                     <Box key={index} bg="red.500" px={2} py={1} rounded="full" mr={1} mb={1}>
-                      <Text color="white" fontSize="xs" fontWeight="500">
+                      <Text color="gray.800" fontSize="xs" fontWeight="500">
                         {allergy}
                       </Text>
                     </Box>
@@ -166,8 +182,8 @@ export default function StaffMyClassScreen({
 
             {/* Assigned Date */}
             <HStack space={2} alignItems="center">
-              <Icon as={MaterialIcons} name="schedule" size="sm" color="coolGray.400" />
-              <Text color="coolGray.400" fontSize="sm">
+              <Icon as={Ionicons} name="time-outline" size="sm" color="gray.600" />
+              <Text color="gray.600" fontSize="sm">
                 Assigned:{" "}
                 {assignment.assignedAt
                   ? new Date(assignment.assignedAt.toDate()).toLocaleDateString()
@@ -176,37 +192,37 @@ export default function StaffMyClassScreen({
             </HStack>
           </VStack>
         </Box>
-        <Divider bg="coolGray.700" my={2} />
+        <Divider bg="gray.100" my={2} />
       </Box>
     );
   };
 
   return (
-    <Box flex={1} bg="coolGray.900" safeArea>
+    <Box flex={1} bg="#F7F9FC" safeArea>
       {/* Header */}
-      <Box bg="coolGray.800" px={6} py={4} shadow={3}>
+      <Box bg="white" px={6} py={4} shadow={3}>
         <VStack space={2}>
           <HStack alignItems="center" space={3}>
             {onBack && (
               <IconButton
                 icon={
-                  <Icon as={MaterialIcons} name="arrow-back" size="lg" color="white" />
+                  <Icon as={Ionicons} name="arrow-back" size="lg" color="gray.800" />
                 }
                 onPress={onBack}
                 variant="ghost"
                 _pressed={{ bg: "coolGray.700" }}
               />
             )}
-            <Heading color="white" size="xl" flex={1}>
+            <Heading color="gray.800" size="xl" flex={1}>
               My Class
             </Heading>
           </HStack>
           <HStack justifyContent="space-between" alignItems="center">
-            <Text color="coolGray.400" fontSize="md">
+            <Text color="gray.600" fontSize="md">
               Teacher: {staffName || "Staff"}
             </Text>
             <Badge bg="green.500" px={3} py={1} rounded="full">
-              <Text color="white" fontSize="xs" fontWeight="600">
+              <Text color="gray.800" fontSize="xs" fontWeight="600">
                 {assignments.length} {assignments.length === 1 ? "Child" : "Children"}
               </Text>
             </Badge>
@@ -217,8 +233,8 @@ export default function StaffMyClassScreen({
       {/* Content */}
       {loading ? (
         <Box flex={1} justifyContent="center" alignItems="center">
-          <Spinner size="lg" color="brand.500" />
-          <Text color="coolGray.400" mt={4} fontSize="md">
+          <Spinner size="lg" color="primary.400" />
+          <Text color="gray.600" mt={4} fontSize="md">
             Loading your class...
           </Text>
         </Box>
@@ -227,12 +243,12 @@ export default function StaffMyClassScreen({
           {assignments.length === 0 ? (
             <Box mt={10} alignItems="center">
               <Icon
-                as={MaterialIcons}
+                as={Ionicons}
                 name="child-care"
                 size="4xl"
                 color="coolGray.600"
               />
-              <Text color="coolGray.500" fontSize="lg" mt={4} textAlign="center">
+              <Text color="gray.500" fontSize="lg" mt={4} textAlign="center">
                 No children assigned yet
               </Text>
               <Text color="coolGray.600" fontSize="sm" mt={2} textAlign="center">
@@ -245,7 +261,7 @@ export default function StaffMyClassScreen({
               <Box bg="blue.900" p={4} rounded="xl" borderWidth={1} borderColor="blue.600" mb={4}>
                 <VStack space={2}>
                   <HStack space={2} alignItems="center">
-                    <Icon as={MaterialIcons} name="info" size="sm" color="blue.400" />
+                    <Icon as={Ionicons} name="information-circle-outline" size="sm" color="blue.400" />
                     <Text color="blue.200" fontSize="md" fontWeight="600">
                       Class Summary
                     </Text>

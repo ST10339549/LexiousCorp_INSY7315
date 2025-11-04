@@ -6,14 +6,15 @@ import {
   Box,
   VStack,
   Text,
-  FormControl,
-  Input,
-  Button,
+  Heading,
   Spinner,
   Pressable,
+  HStack,
 } from "native-base";
+import { Ionicons } from "@expo/vector-icons";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
+import { AppButton, AppInput } from "../components/shared";
 
 const loginSchema = z.object({
   email: z
@@ -71,109 +72,124 @@ export default function LoginScreen({
   }
 
   return (
-    <Box flex={1} bg="bg.900" px={6} py={12} alignItems="center">
-      <Box bg="bg.800" w="100%" maxW="400px" p={6} rounded="2xl">
-        <VStack space={4}>
-          <Text color="white" fontSize="xl" fontWeight="600">
-            Welcome back, please sign in
+    <Box flex={1} bg="background.secondary" safeArea>
+      {/* Header with Logo/Icon */}
+      <VStack space={6} px={6} py={8} alignItems="center">
+        <Box
+          bg="primary.400"
+          rounded="full"
+          p={5}
+          shadow="lg"
+          mb={2}
+        >
+          <Ionicons name="home" size={48} color="white" />
+        </Box>
+        
+        <VStack space={1} alignItems="center">
+          <Heading size="xl" color="gray.800" fontWeight="700">
+            Creche Connect
+          </Heading>
+          <Text color="gray.500" fontSize="md">
+            Welcome back! Please sign in to continue
           </Text>
-          <Text color="coolGray.400" fontSize="sm">
-            Log in to Little Lemon Creche
-          </Text>
+        </VStack>
+      </VStack>
 
-          {/* Email */}
-          <FormControl isInvalid={"email" in errors}>
-            <FormControl.Label _text={{ color: "coolGray.300" }}>
-              Email
-            </FormControl.Label>
+      {/* Login Form Card */}
+      <Box px={6} flex={1}>
+        <Box
+          bg="white"
+          rounded="lg"
+          p={6}
+          shadow="md"
+          borderWidth={1}
+          borderColor="gray.100"
+        >
+          <VStack space={4}>
+            {/* Email Input */}
             <Controller
               control={control}
               name="email"
               render={({ field: { value, onChange } }) => (
-                <Input
-                  bg="bg.700"
-                  color="white"
-                  borderColor="bg.700"
-                  rounded="lg"
+                <AppInput
+                  label="Email Address"
                   value={value}
                   onChangeText={onChange}
-                  placeholder="you@email.com"
-                  placeholderTextColor="#666"
+                  placeholder="you@example.com"
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  _focus={{
-                    borderColor: "brand.500",
-                    borderWidth: 2,
-                  }}
+                  error={errors.email?.message}
+                  isRequired
                 />
               )}
             />
-            {errors.email && (
-              <FormControl.ErrorMessage>
-                {errors.email.message}
-              </FormControl.ErrorMessage>
-            )}
-          </FormControl>
 
-          {/* Password */}
-          <FormControl isInvalid={"password" in errors}>
-            <FormControl.Label _text={{ color: "coolGray.300" }}>
-              Password
-            </FormControl.Label>
+            {/* Password Input */}
             <Controller
               control={control}
               name="password"
               render={({ field: { value, onChange } }) => (
-                <Input
-                  bg="bg.700"
-                  color="white"
-                  borderColor="bg.700"
-                  rounded="lg"
+                <AppInput
+                  label="Password"
                   value={value}
                   onChangeText={onChange}
-                  placeholder="••••••••"
-                  placeholderTextColor="#666"
+                  placeholder="Enter your password"
                   secureTextEntry
-                  _focus={{
-                    borderColor: "brand.500",
-                    borderWidth: 2,
-                  }}
+                  error={errors.password?.message}
+                  isRequired
                 />
               )}
             />
-            {errors.password && (
-              <FormControl.ErrorMessage>
-                {errors.password.message}
-              </FormControl.ErrorMessage>
-            )}
-          </FormControl>
 
-          {/* Login button */}
-          <Button
-            mt={2}
-            bg="brand.500"
-            _pressed={{ opacity: 0.8 }}
-            rounded="lg"
-            onPress={handleSubmit(submit)}
-            isDisabled={isSubmitting}
-          >
-            {isSubmitting ? <Spinner color="white" /> : "Log In"}
-          </Button>
+            {/* Login Button */}
+            <AppButton
+              mt={2}
+              colorScheme="primary"
+              onPress={handleSubmit(submit)}
+              isDisabled={isSubmitting}
+              isLoading={isSubmitting}
+              isLoadingText="Signing in..."
+            >
+              {isSubmitting ? <Spinner color="white" /> : "Sign In"}
+            </AppButton>
 
-          {/* Switch to Register */}
-          <Pressable
-            onPress={onGoRegister}
-            alignSelf="center"
-            mt={2}
-            _pressed={{ opacity: 0.6 }}
-          >
-            <Text color="coolGray.400" fontSize="xs">
-              Don't have an account?{" "}
-              <Text color="brand.500" fontWeight="600">
-                Register
+            {/* Divider */}
+            <HStack alignItems="center" space={2} my={2}>
+              <Box flex={1} h="1px" bg="gray.200" />
+              <Text color="gray.400" fontSize="xs">
+                OR
               </Text>
+              <Box flex={1} h="1px" bg="gray.200" />
+            </HStack>
+
+            {/* Register Link */}
+            <Pressable
+              onPress={onGoRegister}
+              alignSelf="center"
+              p={2}
+              rounded="md"
+              _pressed={{ bg: "gray.50" }}
+            >
+              <HStack space={1} alignItems="center">
+                <Text color="gray.600" fontSize="sm">
+                  Don't have an account?
+                </Text>
+                <Text color="primary.400" fontSize="sm" fontWeight="600">
+                  Register Now
+                </Text>
+              </HStack>
+            </Pressable>
+          </VStack>
+        </Box>
+
+        {/* Footer Info */}
+        <VStack space={2} alignItems="center" mt={8}>
+          <HStack space={2} alignItems="center">
+            <Ionicons name="shield-checkmark" size={16} color="#4CC38A" />
+            <Text color="gray.500" fontSize="xs">
+              Secure & encrypted login
             </Text>
-          </Pressable>
+          </HStack>
         </VStack>
       </Box>
     </Box>

@@ -14,9 +14,12 @@ import {
   IconButton,
   Icon,
 } from "native-base";
-import { collection, getDocs, doc, setDoc, Timestamp } from "firebase/firestore";
+import { BackHandler } from "react-native";
+import { collection, getDocs, doc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import { AppCard } from "../components/shared";
+import { markAttendance as markAttendanceService } from "../services/attendance";
 
 // Type definition for a child record
 type Child = {
@@ -40,9 +43,10 @@ type AttendanceRecord = {
 // Props for the AttendanceScreen component
 type AttendanceScreenProps = {
   onBack?: () => void;
+  userId?: string;
 };
 
-export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
+export default function AttendanceScreen({ onBack, userId }: AttendanceScreenProps) {
   // State for children list fetched from Firestore
   const [children, setChildren] = useState<Child[]>([]);
   
@@ -63,6 +67,21 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
   useEffect(() => {
     fetchChildren();
   }, []);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Fetches all children from the 'children' collection in Firestore
@@ -107,7 +126,7 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
 
   /**
    * Marks attendance for a specific child
-   * Updates both Firestore and local state
+   * Updates local state only - actual save happens on Submit
    * @param childId - The ID of the child
    * @param status - The attendance status (present/absent)
    */
@@ -127,32 +146,16 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
       newRecords.set(childId, updatedRecord);
       setAttendanceRecords(newRecords);
 
-      // Save to Firestore
-      const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
-      const attendanceRef = doc(db, "attendance", `${childId}_${today}`);
-
-      await setDoc(
-        attendanceRef,
-        {
-          childId,
-          childName: currentRecord.childName,
-          status,
-          timestamp: Timestamp.fromDate(updatedRecord.timestamp),
-          date: today,
-        },
-        { merge: true }
-      );
-
-      console.log(`Attendance marked for ${currentRecord.childName}: ${status}`);
+      console.log(`Local attendance updated for ${currentRecord.childName}: ${status}`);
     } catch (error) {
-      console.error("Error marking attendance:", error);
-      alert("Failed to mark attendance");
+      console.error("Error updating attendance:", error);
+      alert("Failed to update attendance");
     }
   };
 
   /**
    * Handles the Submit Attendance button press
-   * In production, this would finalize and lock the attendance
+   * Saves all attendance records to Firestore and sends notifications
    */
   const handleSubmitAttendance = async () => {
     try {
@@ -162,12 +165,33 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
       let presentCount = 0;
       let absentCount = 0;
       
+      const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
+      
+      // Save each attendance record to Firestore
+      const savePromises: Promise<void>[] = [];
+      
       attendanceRecords.forEach((record) => {
         if (record.status === "present") presentCount++;
         else absentCount++;
+        
+        // Save to Firestore and send notification if absent
+        const savePromise = markAttendanceService(
+          record.childId,
+          record.status,
+          today,
+          userId || "unknown",
+          record.childName
+        );
+        
+        savePromises.push(savePromise);
       });
+      
+      // Wait for all saves to complete
+      console.log(`⏳ Waiting for ${savePromises.length} attendance records to save...`);
+      await Promise.all(savePromises);
+      console.log(`✅ All attendance records saved successfully`);
 
-      // Log summary for now (can be replaced with actual submission logic)
+      // Log summary
       console.log("=== ATTENDANCE SUMMARY ===");
       console.log(`Total Children: ${attendanceRecords.size}`);
       console.log(`Present: ${presentCount}`);
@@ -209,21 +233,21 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
     return (
       <Box key={child.id} mb={2}>
         {/* Attendance Card */}
-        <Pressable>
-          <Box bg="coolGray.800" rounded="xl" p={4} shadow={2}>
+        <AppCard>
+          <Pressable>
             <HStack justifyContent="space-between" alignItems="center">
               {/* Left: Child Information */}
               <VStack flex={1} mr={4}>
-                <Text color="white" fontSize="lg" fontWeight="600">
+                <Text color="gray.800" fontSize="lg" fontWeight="600">
                   {child.name}
                 </Text>
                 {child.parentName && (
-                  <Text color="coolGray.400" fontSize="sm">
+                  <Text color="gray.600" fontSize="sm">
                     Parent: {child.parentName}
                   </Text>
                 )}
                 {child.age && (
-                  <Text color="coolGray.500" fontSize="xs">
+                  <Text color="gray.500" fontSize="xs">
                     Age: {child.age} years
                   </Text>
                 )}
@@ -233,7 +257,7 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
               <VStack alignItems="flex-end" space={1}>
                 <HStack space={3} alignItems="center">
                   <Text
-                    color={isPresent ? "coolGray.500" : "green.400"}
+                    color={isPresent ? "gray.400" : "success.600"}
                     fontSize="sm"
                     fontWeight="500"
                   >
@@ -246,13 +270,13 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
                       const newStatus = isPresent ? "absent" : "present";
                       markAttendance(child.id, newStatus);
                     }}
-                    offTrackColor="coolGray.600"
-                    onTrackColor="green.500"
+                    offTrackColor="gray.300"
+                    onTrackColor="success.500"
                     onThumbColor="white"
                     offThumbColor="white"
                   />
                   <Text
-                    color={isPresent ? "green.400" : "coolGray.500"}
+                    color={isPresent ? "success.600" : "gray.400"}
                     fontSize="sm"
                     fontWeight="500"
                   >
@@ -262,42 +286,39 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
                 
                 {/* Timestamp */}
                 {record && (
-                  <Text color="coolGray.600" fontSize="xs">
+                  <Text color="gray.500" fontSize="xs">
                     {record.timestamp.toLocaleTimeString()}
                   </Text>
                 )}
               </VStack>
             </HStack>
-          </Box>
-        </Pressable>
-        
-        {/* Divider */}
-        <Divider bg="coolGray.700" my={2} />
+          </Pressable>
+        </AppCard>
       </Box>
     );
   };
 
   return (
-    <Box flex={1} bg="coolGray.900" safeArea>
+    <Box flex={1} bg="#F7F9FC" safeArea>
       {/* Header Section */}
-      <Box bg="coolGray.800" px={6} py={4} shadow={3}>
+      <Box bg="white" px={6} py={4} shadow={2} borderBottomWidth={1} borderBottomColor="gray.200">
         <VStack space={2}>
           <HStack alignItems="center" space={3}>
             {/* Back Button */}
             {onBack && (
               <IconButton
-                icon={<Icon as={MaterialIcons} name="arrow-back" size="lg" color="white" />}
+                icon={<Icon as={Ionicons} name="arrow-back" size="lg" color="gray.800" />}
                 onPress={onBack}
                 variant="ghost"
-                _pressed={{ bg: "coolGray.700" }}
+                _pressed={{ bg: "gray.100" }}
               />
             )}
-            <Heading color="white" size="xl" flex={1}>
+            <Heading color="gray.800" size="xl" flex={1}>
               Daily Attendance
             </Heading>
           </HStack>
           <HStack justifyContent="space-between" alignItems="center">
-            <Text color="coolGray.400" fontSize="md">
+            <Text color="gray.600" fontSize="md">
               {new Date().toLocaleDateString("en-US", {
                 weekday: "long",
                 year: "numeric",
@@ -306,14 +327,14 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
               })}
             </Text>
             <HStack space={2}>
-              <Box bg="green.500" px={3} py={1} rounded="full">
+              <Box bg="success.500" px={3} py={1} rounded="full">
                 <Text color="white" fontSize="xs" fontWeight="600">
                   {Array.from(attendanceRecords.values()).filter((r) => r.status === "present")
                     .length}{" "}
                   Present
                 </Text>
               </Box>
-              <Box bg="red.500" px={3} py={1} rounded="full">
+              <Box bg="error.500" px={3} py={1} rounded="full">
                 <Text color="white" fontSize="xs" fontWeight="600">
                   {Array.from(attendanceRecords.values()).filter((r) => r.status === "absent")
                     .length}{" "}
@@ -329,7 +350,8 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
       <ScrollView flex={1} px={6} py={4}>
         {children.length === 0 ? (
           <Box mt={10} alignItems="center">
-            <Text color="coolGray.500" fontSize="lg">
+            <Icon as={Ionicons} name="people-outline" size={16} color="gray.300" mb={3} />
+            <Text color="gray.500" fontSize="lg">
               No children registered yet
             </Text>
           </Box>
@@ -345,13 +367,13 @@ export default function AttendanceScreen({ onBack }: AttendanceScreenProps) {
         <Box position="absolute" bottom={6} left={6} right={6}>
           <Button
             size="lg"
-            bg="brand.500"
+            bg="primary.400"
             rounded="full"
             shadow={5}
             onPress={handleSubmitAttendance}
             isLoading={submitting}
             isLoadingText="Submitting..."
-            _pressed={{ bg: "brand.600" }}
+            _pressed={{ bg: "primary.500" }}
             _text={{
               fontSize: "lg",
               fontWeight: "700",

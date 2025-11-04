@@ -18,11 +18,11 @@ import {
   WarningOutlineIcon,
   Alert,
 } from "native-base";
-import { KeyboardAvoidingView, Platform } from "react-native";
+import { KeyboardAvoidingView, Platform, BackHandler } from "react-native";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { addChildUnique, checkChildExists } from "../services/children";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Role } from "../types/user";
 
 type Parent = {
@@ -82,6 +82,21 @@ export default function AddChildScreen({
       setSelectedParentId(userId);
     }
   }, [userRole, userId]);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Check for duplicate child when name and DOB are entered
@@ -285,19 +300,19 @@ export default function AddChildScreen({
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
     >
-      <Box flex={1} bg="coolGray.900" safeArea>
+      <Box flex={1} bg="#F7F9FC" safeArea>
         {/* Header */}
-        <Box bg="coolGray.800" px={6} py={4} shadow={3}>
+        <Box bg="white" px={6} py={4} shadow={2} borderBottomWidth={1} borderBottomColor="gray.200">
           <HStack alignItems="center" space={3}>
             {onBack && (
               <IconButton
-                icon={<Icon as={MaterialIcons} name="arrow-back" size="lg" color="white" />}
+                icon={<Icon as={Ionicons} name="arrow-back" size="lg" color="gray.800" />}
                 onPress={onBack}
                 variant="ghost"
-                _pressed={{ bg: "coolGray.700" }}
+                _pressed={{ bg: "gray.100" }}
               />
             )}
-            <Heading color="white" size="xl" flex={1}>
+            <Heading color="gray.800" size="xl" flex={1}>
               Add Child
             </Heading>
           </HStack>
@@ -310,14 +325,14 @@ export default function AddChildScreen({
             {userRole === "admin" && (
               <FormControl isRequired isInvalid={!!errors.parentId}>
                 <FormControl.Label>
-                  <Text color="white" fontSize="md" fontWeight="500">
+                  <Text color="gray.800" fontSize="md" fontWeight="500">
                     Select Parent
                   </Text>
                 </FormControl.Label>
                 {loadingParents ? (
                   <HStack space={2} alignItems="center" py={3}>
-                    <Spinner size="sm" color="brand.500" />
-                    <Text color="coolGray.400">Loading parents...</Text>
+                    <Spinner size="sm" color="primary.400" />
+                    <Text color="gray.600">Loading parents...</Text>
                   </HStack>
                 ) : (
                   <Select
@@ -328,17 +343,17 @@ export default function AddChildScreen({
                       setSelectedParentId(value);
                       setErrors({ ...errors, parentId: "" });
                     }}
-                    bg="coolGray.800"
-                    color="white"
-                    borderColor="coolGray.600"
+                    bg="white"
+                    color="gray.800"
+                    borderColor="gray.300"
                     rounded="xl"
                     py={3}
                     _selectedItem={{
-                      bg: "brand.500",
-                      endIcon: <CheckIcon size="5" color="white" />,
+                      bg: "primary.100",
+                      endIcon: <CheckIcon size="5" color="primary.600" />,
                     }}
                     _actionSheetContent={{
-                      bg: "coolGray.800",
+                      bg: "white",
                     }}
                   >
                     {parents.map((parent) => (
@@ -361,7 +376,7 @@ export default function AddChildScreen({
             {/* Child Name */}
             <FormControl isRequired isInvalid={!!errors.childName}>
               <FormControl.Label>
-                <Text color="white" fontSize="md" fontWeight="500">
+                <Text color="gray.800" fontSize="md" fontWeight="500">
                   Child Name
                 </Text>
               </FormControl.Label>
@@ -372,15 +387,15 @@ export default function AddChildScreen({
                   setErrors({ ...errors, childName: "" });
                 }}
                 placeholder="Enter child's full name"
-                bg="coolGray.800"
-                color="white"
-                borderColor="coolGray.600"
+                bg="white"
+                color="gray.800"
+                borderColor="gray.300"
                 rounded="xl"
                 py={3}
                 fontSize="md"
                 _focus={{
-                  bg: "coolGray.800",
-                  borderColor: "brand.500",
+                  bg: "white",
+                  borderColor: "primary.400",
                 }}
               />
               {errors.childName && (
@@ -393,7 +408,7 @@ export default function AddChildScreen({
             {/* Date of Birth */}
             <FormControl isRequired isInvalid={!!errors.dateOfBirth}>
               <FormControl.Label>
-                <Text color="white" fontSize="md" fontWeight="500">
+                <Text color="gray.800" fontSize="md" fontWeight="500">
                   Date of Birth
                 </Text>
               </FormControl.Label>
@@ -404,15 +419,15 @@ export default function AddChildScreen({
                   setErrors({ ...errors, dateOfBirth: "" });
                 }}
                 placeholder="YYYY-MM-DD (e.g., 2020-05-15)"
-                bg="coolGray.800"
-                color="white"
-                borderColor="coolGray.600"
+                bg="white"
+                color="gray.800"
+                borderColor="gray.300"
                 rounded="xl"
                 py={3}
                 fontSize="md"
                 _focus={{
-                  bg: "coolGray.800",
-                  borderColor: "brand.500",
+                  bg: "white",
+                  borderColor: "primary.400",
                 }}
               />
               {errors.dateOfBirth && (
@@ -425,7 +440,7 @@ export default function AddChildScreen({
             {/* Allergies */}
             <FormControl>
               <FormControl.Label>
-                <Text color="white" fontSize="md" fontWeight="500">
+                <Text color="gray.800" fontSize="md" fontWeight="500">
                   Allergies (Optional)
                 </Text>
               </FormControl.Label>
@@ -433,19 +448,19 @@ export default function AddChildScreen({
                 value={allergiesInput}
                 onChangeText={setAllergiesInput}
                 placeholder="e.g., Peanuts, Dairy, Eggs (comma-separated)"
-                bg="coolGray.800"
-                color="white"
-                borderColor="coolGray.600"
+                bg="white"
+                color="gray.800"
+                borderColor="gray.300"
                 rounded="xl"
                 py={3}
                 fontSize="md"
                 _focus={{
-                  bg: "coolGray.800",
-                  borderColor: "brand.500",
+                  bg: "white",
+                  borderColor: "primary.400",
                 }}
               />
               <FormControl.HelperText>
-                <Text color="coolGray.500" fontSize="sm">
+                <Text color="gray.600" fontSize="sm">
                   Separate multiple allergies with commas
                 </Text>
               </FormControl.HelperText>
@@ -499,13 +514,13 @@ export default function AddChildScreen({
             {/* Submit Button */}
             <Button
               size="lg"
-              bg="brand.500"
+              bg="primary.400"
               rounded="xl"
               mt={4}
               onPress={handleSubmit}
               isLoading={submitting}
               isLoadingText="Creating child..."
-              _pressed={{ bg: "brand.600" }}
+              _pressed={{ bg: "primary.500" }}
               isDisabled={submitting || isDuplicate || checkingDuplicate}
             >
               <Text color="white" fontSize="md" fontWeight="600">

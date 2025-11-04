@@ -11,14 +11,18 @@ import {
   VStack,
   HStack,
   Text,
-  Button,
   Heading,
   ScrollView,
   Spinner,
   Divider,
   Badge,
+  IconButton,
+  Icon,
 } from "native-base";
+import { BackHandler } from "react-native";
 import { subscribeAnnouncements, Announcement } from "../services/announcements";
+import { Ionicons } from "@expo/vector-icons";
+import { AppCard } from "../components/shared";
 
 type AnnouncementsScreenProps = {
   onBack?: () => void;
@@ -50,6 +54,21 @@ export default function AnnouncementsScreen({ onBack }: AnnouncementsScreenProps
       unsubscribe();
     };
   }, []);
+
+  /**
+   * Handle hardware back button
+   */
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [onBack]);
 
   /**
    * Format timestamp for display
@@ -98,7 +117,7 @@ export default function AnnouncementsScreen({ onBack }: AnnouncementsScreenProps
   };
 
   return (
-    <Box bg="coolGray.50" flex={1} safeArea>
+    <Box bg="#F7F9FC" flex={1} safeArea>
       {/* Header */}
       <HStack
         bg="white"
@@ -107,16 +126,21 @@ export default function AnnouncementsScreen({ onBack }: AnnouncementsScreenProps
         justifyContent="space-between"
         alignItems="center"
         borderBottomWidth={1}
-        borderBottomColor="coolGray.200"
+        borderBottomColor="gray.200"
+        shadow={1}
       >
-        <Heading size="lg" color="primary.700">
-          📢 Announcements
-        </Heading>
         {onBack && (
-          <Button variant="ghost" onPress={onBack}>
-            Back
-          </Button>
+          <IconButton
+            icon={<Icon as={Ionicons} name="arrow-back" size="lg" color="gray.800" />}
+            onPress={onBack}
+            variant="ghost"
+            _pressed={{ bg: "gray.100" }}
+          />
         )}
+        <Heading size="lg" color="gray.800" flex={1}>
+          Announcements
+        </Heading>
+        <Icon as={Ionicons} name="megaphone" size={6} color="primary.400" />
       </HStack>
 
       {/* Content */}
@@ -125,7 +149,7 @@ export default function AnnouncementsScreen({ onBack }: AnnouncementsScreenProps
           {/* Loading State */}
           {loading && (
             <Box py={10} alignItems="center">
-              <Spinner size="lg" color="primary.500" />
+              <Spinner size="lg" color="primary.400" />
               <Text mt={3} color="gray.600">
                 Loading announcements...
               </Text>
@@ -134,31 +158,21 @@ export default function AnnouncementsScreen({ onBack }: AnnouncementsScreenProps
 
           {/* Empty State */}
           {!loading && announcements.length === 0 && (
-            <Box bg="white" p={8} borderRadius="lg" alignItems="center">
-              <Text fontSize="4xl" mb={2}>
-                📭
-              </Text>
+            <AppCard alignItems="center" py={8}>
+              <Icon as={Ionicons} name="notifications-off-outline" size={16} color="gray.300" mb={3} />
               <Text fontSize="lg" fontWeight="bold" color="gray.700">
                 No Announcements
               </Text>
               <Text fontSize="sm" color="gray.500" textAlign="center" mt={2}>
                 There are no announcements at this time.
               </Text>
-            </Box>
+            </AppCard>
           )}
 
           {/* Announcements List */}
           {!loading &&
             announcements.map((announcement) => (
-              <Box
-                key={announcement.id}
-                bg="white"
-                p={4}
-                borderRadius="lg"
-                shadow={1}
-                borderWidth={1}
-                borderColor="coolGray.200"
-              >
+              <AppCard key={announcement.id}>
                 <VStack space={2}>
                   {/* Header with badge */}
                   <HStack justifyContent="space-between" alignItems="flex-start">
@@ -191,7 +205,7 @@ export default function AnnouncementsScreen({ onBack }: AnnouncementsScreenProps
                     {announcement.body}
                   </Text>
                 </VStack>
-              </Box>
+              </AppCard>
             ))}
 
           {/* Info Box */}

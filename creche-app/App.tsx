@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { BackHandler, Alert } from "react-native";
+import { StripeProvider } from '@stripe/stripe-react-native';
 import AppContainer from "./src/providers/AppContainer";
 import LoginScreen from "./src/screens/LoginScreen";
 import RegisterScreen from "./src/screens/RegistrationScreen";
@@ -16,11 +18,18 @@ import AnnouncementsScreen from "./src/screens/AnnouncementsScreen";
 import StaffAnnouncementsScreen from "./src/screens/StaffAnnouncementsScreen";
 import ManageEventsScreen from "./src/screens/ManageEventsScreen";
 import ParentEventsCalendar from "./src/screens/ParentEventsCalendar";
+import ManageMenuScreen from "./src/screens/ManageMenuScreen";
+import LunchOrderScreen from "./src/screens/LunchOrderScreen";
+import OrdersAdminScreen from "./src/screens/OrdersAdminScreen";
+import PaymentsScreen from "./src/screens/PaymentsScreen";
+import ReceiptsScreen from "./src/screens/ReceiptsScreen";
+import ManageFeesScreen from "./src/screens/ManageFeesScreen";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "./src/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { registerForPushNotifications } from "./src/services/notifications";
 import { Role } from "./src/types/user";
+import { STRIPE_CONFIG } from "./src/config/stripe";
 
 async function handleLogin(email: string, password: string): Promise<{ role: string; userName: string; userId: string } | null> {
   try {
@@ -121,7 +130,7 @@ async function handleRegister(fullName: string, email: string, password: string)
 }
 
 export default function App() {
-  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements" | "manageEvents" | "parentEvents">("login");
+  const [mode, setMode] = useState<"login" | "register" | "admin" | "staff" | "parent" | "attendance" | "addChild" | "parentChildren" | "manageUsers" | "assignChildren" | "staffMyClass" | "createAnnouncement" | "announcements" | "staffAnnouncements" | "manageEvents" | "parentEvents" | "manageMenu" | "lunchOrders" | "viewOrders" | "payments" | "receipts" | "manageFees">("login");
   const [userName, setUserName] = useState<string>("");
   const [userRole, setUserRole] = useState<Role>("parent");
   const [userId, setUserId] = useState<string>("");
@@ -135,7 +144,7 @@ export default function App() {
   };
 
   const handleNavigateToAttendance = () => {
-    console.log("Navigating to Attendance Screen");
+    console.log(`[Navigation] Navigating to Attendance Screen - Current userRole: "${userRole}"`);
     setMode("attendance");
   };
 
@@ -189,6 +198,36 @@ export default function App() {
     setMode("parentEvents");
   };
 
+  const handleNavigateToManageMenu = () => {
+    console.log("Navigating to Manage Menu Screen");
+    setMode("manageMenu");
+  };
+
+  const handleNavigateToLunchOrders = () => {
+    console.log("Navigating to Lunch Orders Screen");
+    setMode("lunchOrders");
+  };
+
+  const handleNavigateToViewOrders = () => {
+    console.log("Navigating to View Orders Screen");
+    setMode("viewOrders");
+  };
+
+  const handleNavigateToPayments = () => {
+    console.log("Navigating to Payments Screen");
+    setMode("payments");
+  };
+
+  const handleNavigateToReceipts = () => {
+    console.log("Navigating to Receipts Screen");
+    setMode("receipts");
+  };
+
+  const handleNavigateToManageFees = () => {
+    console.log("Navigating to Manage Fees Screen");
+    setMode("manageFees");
+  };
+
   const handleBackToAdminDashboard = () => {
     console.log("Navigating back to Admin Dashboard");
     setMode("admin");
@@ -204,8 +243,77 @@ export default function App() {
     setMode("parent");
   };
 
+  // Handle Android back button
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      // Handle back button based on current mode
+      if (mode === 'login' || mode === 'register') {
+        // On login or register screen, show exit confirmation
+        Alert.alert(
+          'Exit App',
+          'Are you sure you want to exit?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Exit', onPress: () => BackHandler.exitApp() }
+          ]
+        );
+        return true; // Prevent default behavior
+      } else if (mode === 'admin' || mode === 'staff' || mode === 'parent') {
+        // On main dashboard screens, show logout confirmation
+        Alert.alert(
+          'Logout',
+          'Do you want to logout?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Logout', onPress: handleLogout }
+          ]
+        );
+        return true; // Prevent default behavior
+      } else {
+        // On sub-screens, navigate back to appropriate dashboard
+        if (mode === 'attendance') {
+          // Navigate based on user role for attendance
+          if (userRole === 'admin') {
+            handleBackToAdminDashboard();
+          } else if (userRole === 'staff') {
+            handleBackToStaffDashboard();
+          } else {
+            handleBackToParentHome();
+          }
+        } else if (mode === 'manageUsers' || 
+            mode === 'assignChildren' || mode === 'createAnnouncement' || 
+            mode === 'manageEvents' || mode === 'manageMenu' || mode === 'viewOrders' || 
+            mode === 'manageFees') {
+          handleBackToAdminDashboard();
+        } else if (mode === 'addChild') {
+          // Navigate based on user role
+          if (userRole === 'admin') {
+            handleBackToAdminDashboard();
+          } else if (userRole === 'staff') {
+            handleBackToStaffDashboard();
+          } else {
+            handleBackToParentHome();
+          }
+        } else if (mode === 'staffMyClass' || mode === 'staffAnnouncements') {
+          handleBackToStaffDashboard();
+        } else if (mode === 'parentChildren' || mode === 'announcements' || 
+                   mode === 'parentEvents' || mode === 'lunchOrders' || 
+                   mode === 'payments' || mode === 'receipts') {
+          handleBackToParentHome();
+        }
+        return true; // Prevent default behavior
+      }
+    });
+
+    return () => backHandler.remove();
+  }, [mode]);
+
   return (
-    <AppContainer>
+    <StripeProvider
+      publishableKey={STRIPE_CONFIG.publishableKey}
+      merchantIdentifier={STRIPE_CONFIG.merchantDisplayName}
+    >
+      <AppContainer>
       {mode === "login" ? (
         <LoginScreen
           onLogin={async (email, password) => {
@@ -249,6 +357,9 @@ export default function App() {
           onNavigateToAssignChildren={handleNavigateToAssignChildren}
           onNavigateToCreateAnnouncement={handleNavigateToCreateAnnouncement}
           onNavigateToManageEvents={handleNavigateToManageEvents}
+          onNavigateToManageMenu={handleNavigateToManageMenu}
+          onNavigateToViewOrders={handleNavigateToViewOrders}
+          onNavigateToManageFees={handleNavigateToManageFees}
         />
       ) : mode === "staff" ? (
         <StaffDashboard
@@ -256,16 +367,26 @@ export default function App() {
           userId={userId}
           onLogout={handleLogout}
           onNavigateToAttendance={handleNavigateToAttendance}
+          onNavigateToAddChild={handleNavigateToAddChild}
           onNavigateToMyClass={handleNavigateToStaffMyClass}
           onNavigateToAnnouncements={handleNavigateToStaffAnnouncements}
         />
       ) : mode === "attendance" ? (
-        <AttendanceScreen onBack={() => {
+        <AttendanceScreen 
+          userId={userId}
+          onBack={() => {
+          console.log(`[Attendance] onBack called - userRole: "${userRole}", userId: "${userId}"`);
+          console.log(`[Attendance] userRole type: ${typeof userRole}, length: ${userRole?.length || 0}`);
+          console.log(`[Attendance] Checking conditions: admin=${userRole === "admin"}, staff=${userRole === "staff"}, parent=${userRole === "parent"}`);
+          
           if (userRole === "admin") {
+            console.log(`[Attendance] Navigating to Admin Dashboard`);
             handleBackToAdminDashboard();
           } else if (userRole === "staff") {
+            console.log(`[Attendance] Navigating to Staff Dashboard`);
             handleBackToStaffDashboard();
           } else {
+            console.log(`[Attendance] Navigating to Parent Home`);
             handleBackToParentHome();
           }
         }} />
@@ -274,20 +395,34 @@ export default function App() {
           userRole={userRole}
           userId={userId}
           onBack={() => {
+            console.log(`[AddChild] onBack called - userRole: "${userRole}", userId: "${userId}"`);
+            console.log(`[AddChild] userRole type: ${typeof userRole}, length: ${userRole?.length || 0}`);
+            console.log(`[AddChild] Checking conditions: admin=${userRole === "admin"}, staff=${userRole === "staff"}, parent=${userRole === "parent"}`);
+            
             if (userRole === "admin") {
+              console.log(`[AddChild] Navigating to Admin Dashboard`);
               handleBackToAdminDashboard();
             } else if (userRole === "staff") {
+              console.log(`[AddChild] Navigating to Staff Dashboard`);
               handleBackToStaffDashboard();
             } else {
+              console.log(`[AddChild] Navigating to Parent Home`);
               handleBackToParentHome();
             }
           }}
           onSuccess={() => {
+            console.log(`[AddChild] onSuccess called - userRole: "${userRole}", userId: "${userId}"`);
+            console.log(`[AddChild] userRole type: ${typeof userRole}, length: ${userRole?.length || 0}`);
+            console.log(`[AddChild] Checking conditions: admin=${userRole === "admin"}, staff=${userRole === "staff"}, parent=${userRole === "parent"}`);
+            
             if (userRole === "admin") {
+              console.log(`[AddChild] Navigating to Admin Dashboard`);
               handleBackToAdminDashboard();
             } else if (userRole === "staff") {
+              console.log(`[AddChild] Navigating to Staff Dashboard`);
               handleBackToStaffDashboard();
             } else {
+              console.log(`[AddChild] Navigating to Parent Home`);
               handleBackToParentHome();
             }
           }}
@@ -337,6 +472,31 @@ export default function App() {
         <ParentEventsCalendar
           onBack={handleBackToParentHome}
         />
+      ) : mode === "manageMenu" ? (
+        <ManageMenuScreen
+          navigation={{ goBack: handleBackToAdminDashboard }}
+        />
+      ) : mode === "lunchOrders" ? (
+        <LunchOrderScreen
+          userId={userId}
+          onNavigateBack={handleBackToParentHome}
+        />
+      ) : mode === "viewOrders" ? (
+        <OrdersAdminScreen
+          onNavigateBack={handleBackToAdminDashboard}
+        />
+      ) : mode === "payments" ? (
+        <PaymentsScreen
+          userId={userId}
+          onNavigateBack={handleBackToParentHome}
+        />
+      ) : mode === "receipts" ? (
+        <ReceiptsScreen
+          userId={userId}
+          onNavigateBack={handleBackToParentHome}
+        />
+      ) : mode === "manageFees" ? (
+        <ManageFeesScreen />
       ) : (
         <ParentHome 
           userName={userName}
@@ -346,8 +506,12 @@ export default function App() {
           onNavigateToMyChildren={handleNavigateToParentChildren}
           onNavigateToAnnouncements={handleNavigateToAnnouncements}
           onNavigateToEvents={handleNavigateToParentEvents}
+          onNavigateToLunchOrders={handleNavigateToLunchOrders}
+          onNavigateToPayments={handleNavigateToPayments}
+          onNavigateToReceipts={handleNavigateToReceipts}
         />
       )}
     </AppContainer>
+    </StripeProvider>
   );
 }

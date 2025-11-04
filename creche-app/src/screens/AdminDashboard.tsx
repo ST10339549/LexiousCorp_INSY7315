@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Box, VStack, Text, Button, HStack, Heading, useToast, ScrollView, Spinner, Divider } from "native-base";
+import { Box, VStack, Text, HStack, Heading, ScrollView, Spinner, Icon, Pressable } from "native-base";
+import { Ionicons } from "@expo/vector-icons";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import { subscribeAnnouncements, Announcement } from "../services/announcements";
+import { AppCard } from "../components/shared";
 
 type AdminDashboardProps = {
     userName?: string;
@@ -14,12 +16,27 @@ type AdminDashboardProps = {
     onNavigateToAssignChildren?: () => void;
     onNavigateToCreateAnnouncement?: () => void;
     onNavigateToManageEvents?: () => void;
+    onNavigateToManageMenu?: () => void;
+    onNavigateToViewOrders?: () => void;
+    onNavigateToManageFees?: () => void;
 };
 
-export default function AdminDashboard({ userName, userId, onLogout, onNavigateToAttendance, onNavigateToAddChild, onNavigateToManageUsers, onNavigateToAssignChildren, onNavigateToCreateAnnouncement, onNavigateToManageEvents }: AdminDashboardProps) {
+export default function AdminDashboard({ 
+    userName, 
+    userId, 
+    onLogout, 
+    onNavigateToAttendance, 
+    onNavigateToAddChild, 
+    onNavigateToManageUsers, 
+    onNavigateToAssignChildren, 
+    onNavigateToCreateAnnouncement, 
+    onNavigateToManageEvents, 
+    onNavigateToManageMenu, 
+    onNavigateToViewOrders, 
+    onNavigateToManageFees 
+}: AdminDashboardProps) {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
-    const toast = useToast();
 
     const handleLogout = async () => {
         try {
@@ -31,11 +48,6 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
         }
     };
 
-
-
-    /**
-     * Format timestamp for display
-     */
     const formatDate = (timestamp: any): string => {
         if (!timestamp) return "Unknown date";
 
@@ -62,24 +74,19 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
         }
     };
 
-    /**
-     * Subscribe to announcements updates
-     */
     useEffect(() => {
         console.log("[AdminDashboard] Setting up announcements subscription");
 
         const unsubscribe = subscribeAnnouncements(
             (updatedAnnouncements) => {
                 console.log(`[AdminDashboard] Received ${updatedAnnouncements.length} announcements`);
-                // Only show latest 3 announcements on home screen
                 setAnnouncements(updatedAnnouncements.slice(0, 3));
                 setLoadingAnnouncements(false);
             },
-            3, // Limit to 3 most recent announcements
-            "all" // Show all announcements for admin
+            3,
+            "all"
         );
 
-        // Cleanup subscription on unmount
         return () => {
             console.log("[AdminDashboard] Cleaning up announcements subscription");
             unsubscribe();
@@ -87,205 +94,239 @@ export default function AdminDashboard({ userName, userId, onLogout, onNavigateT
     }, []);
 
     return (
-        <Box flex={1} bg="bg.900" safeArea>
+        <Box flex={1} bg="#F7F9FC" safeArea>
             <ScrollView flex={1}>
-                <VStack space={6} px={6} py={12}>
-                    {/* Header */}
+                <VStack space={6} px={4} py={6}>
                     <HStack justifyContent="space-between" alignItems="center">
                         <VStack>
-                            <Heading color="white" size="xl">
+                            <Heading color="gray.800" size="xl" fontWeight="700">
                                 Admin Dashboard
                             </Heading>
-                            <Text color="coolGray.400" fontSize="md">
+                            <Text color="gray.600" fontSize="md">
                                 Welcome back, {userName || "Admin"}
                             </Text>
                         </VStack>
-                        <Button
+                        <Pressable
                             onPress={handleLogout}
-                            variant="outline"
-                            borderColor="red.500"
-                            _text={{ color: "red.500" }}
+                            p={2}
+                            borderRadius="full"
+                            bg="error.50"
+                            _pressed={{ bg: "error.100" }}
                         >
-                            Logout
-                        </Button>
+                            <Icon as={Ionicons} name="log-out-outline" size={6} color="error.500" />
+                        </Pressable>
                     </HStack>
 
-                    {/* Announcements Section */}
                     <VStack space={4}>
-                        <HStack justifyContent="space-between" alignItems="center">
-                            <Heading color="white" size="lg">
-                                📢 Announcements
-                            </Heading>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onPress={() => onNavigateToCreateAnnouncement && onNavigateToCreateAnnouncement()}
-                                _text={{ color: "brand.500", fontWeight: "600" }}
+                        <Heading color="gray.800" size="md" fontWeight="600">
+                            Quick Actions
+                        </Heading>
+                        
+                        <HStack space={3}>
+                            <Pressable
+                                flex={1}
+                                onPress={() => onNavigateToManageUsers && onNavigateToManageUsers()}
+                                _pressed={{ opacity: 0.7 }}
                             >
-                                Create New
-                            </Button>
+                                <AppCard bg="primary.400" h="110px">
+                                    <VStack space={2} alignItems="center" justifyContent="center" flex={1}>
+                                        <Icon as={Ionicons} name="people" size={8} color="white" />
+                                        <Text color="white" fontSize="sm" fontWeight="600" textAlign="center">
+                                            Manage Users
+                                        </Text>
+                                    </VStack>
+                                </AppCard>
+                            </Pressable>
+
+                            <Pressable
+                                flex={1}
+                                onPress={() => onNavigateToAttendance && onNavigateToAttendance()}
+                                _pressed={{ opacity: 0.7 }}
+                            >
+                                <AppCard bg="yellow.400" h="110px">
+                                    <VStack space={2} alignItems="center" justifyContent="center" flex={1}>
+                                        <Icon as={Ionicons} name="checkmark-circle" size={8} color="white" />
+                                        <Text color="white" fontSize="sm" fontWeight="600" textAlign="center">
+                                            Attendance
+                                        </Text>
+                                    </VStack>
+                                </AppCard>
+                            </Pressable>
                         </HStack>
 
-                        {/* Announcements List */}
-                        {loadingAnnouncements ? (
-                            <Box py={6} alignItems="center">
-                                <Spinner size="sm" color="brand.500" />
-                            </Box>
-                        ) : announcements.length === 0 ? (
-                            <Box
-                                bg="coolGray.800"
-                                p={4}
-                                rounded="xl"
-                                borderWidth={1}
-                                borderColor="coolGray.700"
-                                alignItems="center"
+                        <HStack space={3}>
+                            <Pressable
+                                flex={1}
+                                onPress={() => onNavigateToAssignChildren && onNavigateToAssignChildren()}
+                                _pressed={{ opacity: 0.7 }}
                             >
-                                <Text fontSize="2xl" mb={1}>
-                                    📭
-                                </Text>
-                                <Text color="coolGray.500" fontSize="sm" textAlign="center">
-                                    No announcements at this time
-                                </Text>
-                            </Box>
+                                <AppCard bg="accent.400" h="110px">
+                                    <VStack space={2} alignItems="center" justifyContent="center" flex={1}>
+                                        <Icon as={Ionicons} name="school" size={8} color="white" />
+                                        <Text color="white" fontSize="sm" fontWeight="600" textAlign="center">
+                                            Assign Children
+                                        </Text>
+                                    </VStack>
+                                </AppCard>
+                            </Pressable>
+
+                            <Pressable
+                                flex={1}
+                                onPress={() => onNavigateToAddChild && onNavigateToAddChild()}
+                                _pressed={{ opacity: 0.7 }}
+                            >
+                                <AppCard bg="info.500" h="110px">
+                                    <VStack space={2} alignItems="center" justifyContent="center" flex={1}>
+                                        <Icon as={Ionicons} name="person-add" size={8} color="white" />
+                                        <Text color="white" fontSize="sm" fontWeight="600" textAlign="center">
+                                            Add Child
+                                        </Text>
+                                    </VStack>
+                                </AppCard>
+                            </Pressable>
+                        </HStack>
+
+                        <HStack space={3}>
+                            <Pressable
+                                flex={1}
+                                onPress={() => onNavigateToCreateAnnouncement && onNavigateToCreateAnnouncement()}
+                                _pressed={{ opacity: 0.7 }}
+                            >
+                                <AppCard bg="red.500" h="110px">
+                                    <VStack space={2} alignItems="center" justifyContent="center" flex={1}>
+                                        <Icon as={Ionicons} name="megaphone" size={8} color="white" />
+                                        <Text color="white" fontSize="sm" fontWeight="600" textAlign="center">
+                                            Announcements
+                                        </Text>
+                                    </VStack>
+                                </AppCard>
+                            </Pressable>
+
+                            <Pressable
+                                flex={1}
+                                onPress={() => onNavigateToManageEvents && onNavigateToManageEvents()}
+                                _pressed={{ opacity: 0.7 }}
+                            >
+                                <AppCard bg="purple.500" h="110px">
+                                    <VStack space={2} alignItems="center" justifyContent="center" flex={1}>
+                                        <Icon as={Ionicons} name="calendar" size={8} color="white" />
+                                        <Text color="white" fontSize="sm" fontWeight="600" textAlign="center">
+                                            Events
+                                        </Text>
+                                    </VStack>
+                                </AppCard>
+                            </Pressable>
+                        </HStack>
+
+                        <HStack space={3}>
+                            <Pressable
+                                flex={1}
+                                onPress={() => onNavigateToManageMenu && onNavigateToManageMenu()}
+                                _pressed={{ opacity: 0.7 }}
+                            >
+                                <AppCard bg="orange.500" h="110px">
+                                    <VStack space={2} alignItems="center" justifyContent="center" flex={1}>
+                                        <Icon as={Ionicons} name="restaurant" size={8} color="white" />
+                                        <Text color="white" fontSize="sm" fontWeight="600" textAlign="center">
+                                            Lunch Menu
+                                        </Text>
+                                    </VStack>
+                                </AppCard>
+                            </Pressable>
+
+                            <Pressable
+                                flex={1}
+                                onPress={() => onNavigateToViewOrders && onNavigateToViewOrders()}
+                                _pressed={{ opacity: 0.7 }}
+                            >
+                                <AppCard bg="pink.500" h="110px">
+                                    <VStack space={2} alignItems="center" justifyContent="center" flex={1}>
+                                        <Icon as={Ionicons} name="fast-food" size={8} color="white" />
+                                        <Text color="white" fontSize="sm" fontWeight="600" textAlign="center">
+                                            Lunch Orders
+                                        </Text>
+                                    </VStack>
+                                </AppCard>
+                            </Pressable>
+                        </HStack>
+
+                        <HStack space={3}>
+                            <Pressable
+                                flex={1}
+                                onPress={() => onNavigateToManageFees && onNavigateToManageFees()}
+                                _pressed={{ opacity: 0.7 }}
+                            >
+                                <AppCard bg="emerald.500" h="110px">
+                                    <VStack space={2} alignItems="center" justifyContent="center" flex={1}>
+                                        <Icon as={Ionicons} name="cash" size={8} color="white" />
+                                        <Text color="white" fontSize="sm" fontWeight="600" textAlign="center">
+                                            Manage Fees
+                                        </Text>
+                                    </VStack>
+                                </AppCard>
+                            </Pressable>
+                            
+                            <Box flex={1} />
+                        </HStack>
+                    </VStack>
+
+                    <VStack space={4} mt={2}>
+                        <HStack justifyContent="space-between" alignItems="center">
+                            <Heading color="gray.800" size="md" fontWeight="600">
+                                Recent Announcements
+                            </Heading>
+                        </HStack>
+
+                        {loadingAnnouncements ? (
+                            <AppCard>
+                                <Box py={4} alignItems="center">
+                                    <Spinner size="sm" color="primary.400" />
+                                </Box>
+                            </AppCard>
+                        ) : announcements.length === 0 ? (
+                            <AppCard>
+                                <VStack space={2} alignItems="center" py={4}>
+                                    <Icon as={Ionicons} name="notifications-off-outline" size={12} color="gray.300" />
+                                    <Text color="gray.500" fontSize="sm" textAlign="center">
+                                        No announcements at this time
+                                    </Text>
+                                </VStack>
+                            </AppCard>
                         ) : (
                             <VStack space={3}>
                                 {announcements.map((announcement) => (
-                                    <Box
-                                        key={announcement.id}
-                                        bg="coolGray.800"
-                                        p={4}
-                                        rounded="xl"
-                                        borderWidth={1}
-                                        borderColor="coolGray.700"
-                                    >
+                                    <AppCard key={announcement.id}>
                                         <VStack space={2}>
                                             <HStack justifyContent="space-between" alignItems="flex-start">
-                                                <Text
-                                                    color="white"
-                                                    fontSize="md"
-                                                    fontWeight="bold"
-                                                    flex={1}
-                                                >
-                                                    {announcement.title}
-                                                </Text>
-                                                <Text color="coolGray.500" fontSize="xs" ml={2}>
+                                                <HStack space={2} alignItems="center" flex={1}>
+                                                    <Icon as={Ionicons} name="megaphone" size={5} color="primary.400" />
+                                                    <Text
+                                                        color="gray.800"
+                                                        fontSize="md"
+                                                        fontWeight="600"
+                                                        flex={1}
+                                                    >
+                                                        {announcement.title}
+                                                    </Text>
+                                                </HStack>
+                                                <Text color="gray.500" fontSize="xs" ml={2}>
                                                     {formatDate(announcement.createdAt)}
                                                 </Text>
                                             </HStack>
                                             <Text
-                                                color="coolGray.300"
+                                                color="gray.600"
                                                 fontSize="sm"
                                                 numberOfLines={2}
+                                                ml={7}
                                             >
                                                 {announcement.body}
                                             </Text>
                                         </VStack>
-                                    </Box>
+                                    </AppCard>
                                 ))}
                             </VStack>
                         )}
                     </VStack>
-
-                    {/* Dashboard Actions */}
-                    <VStack space={4}>
-                    {/* Manage Users Button */}
-                    <Button
-                        bg="purple.600"
-                        rounded="xl"
-                        py={4}
-                        onPress={() => onNavigateToManageUsers && onNavigateToManageUsers()}
-                        _pressed={{ bg: "purple.700" }}
-                    >
-                        <HStack space={3} alignItems="center">
-                            <Text fontSize="xl">👥</Text>
-                            <Text color="white" fontSize="md" fontWeight="500">
-                                Manage Users & Roles
-                            </Text>
-                        </HStack>
-                    </Button>
-
-                    {/* Daily Attendance Button */}
-                    <Button
-                        bg="brand.500"
-                        rounded="xl"
-                        py={4}
-                        onPress={() => onNavigateToAttendance && onNavigateToAttendance()}
-                        _pressed={{ bg: "brand.600" }}
-                    >
-                        <HStack space={3} alignItems="center">
-                            <Text fontSize="xl">📋</Text>
-                            <Text color="white" fontSize="md" fontWeight="500">
-                                Daily Attendance
-                            </Text>
-                        </HStack>
-                    </Button>
-
-                    {/* Assign Children to Teachers Button */}
-                    <Button
-                        bg="teal.600"
-                        rounded="xl"
-                        py={4}
-                        onPress={() => onNavigateToAssignChildren && onNavigateToAssignChildren()}
-                        _pressed={{ bg: "teal.700" }}
-                    >
-                        <HStack space={3} alignItems="center">
-                            <Text fontSize="xl">🎓</Text>
-                            <Text color="white" fontSize="md" fontWeight="500">
-                                Assign Children to Teachers
-                            </Text>
-                        </HStack>
-                    </Button>
-
-                    {/* Add Child Button */}
-                    <Button
-                        bg="green.600"
-                        rounded="xl"
-                        py={4}
-                        onPress={() => onNavigateToAddChild && onNavigateToAddChild()}
-                        _pressed={{ bg: "green.700" }}
-                    >
-                        <HStack space={3} alignItems="center">
-                            <Text fontSize="xl">👶</Text>
-                            <Text color="white" fontSize="md" fontWeight="500">
-                                Add Child
-                            </Text>
-                        </HStack>
-                    </Button>
-
-                    {/* Create Announcement Button */}
-                    <Button
-                        bg="indigo.600"
-                        rounded="xl"
-                        py={4}
-                        onPress={() => onNavigateToCreateAnnouncement && onNavigateToCreateAnnouncement()}
-                        _pressed={{ bg: "indigo.700" }}
-                    >
-                        <HStack space={3} alignItems="center">
-                            <Text fontSize="xl">📢</Text>
-                            <Text color="white" fontSize="md" fontWeight="500">
-                                Create Announcement
-                            </Text>
-                        </HStack>
-                    </Button>
-
-                    {/* Manage Events Button */}
-                    <Button
-                        bg="orange.600"
-                        rounded="xl"
-                        py={4}
-                        onPress={() => onNavigateToManageEvents && onNavigateToManageEvents()}
-                        _pressed={{ bg: "orange.700" }}
-                    >
-                        <HStack space={3} alignItems="center">
-                            <Text fontSize="xl">📅</Text>
-                            <Text color="white" fontSize="md" fontWeight="500">
-                                Manage Events
-                            </Text>
-                        </HStack>
-                    </Button>
-
-                    {/* Placeholder for future features */}
-                </VStack>
                 </VStack>
             </ScrollView>
         </Box>
