@@ -347,7 +347,7 @@ export default function PaymentsScreen({
 
             {/* Description */}
             <VStack flex={1} space={1}>
-              <Text color="white" fontSize="md" fontWeight="600">
+              <Text color="gray.800" fontSize="md" fontWeight="600">
                 {fee.description}
               </Text>
               <HStack space={2}>
@@ -357,7 +357,7 @@ export default function PaymentsScreen({
                   px={2}
                   py={0.5}
                 >
-                  <Text color="white" fontSize="xs" fontWeight="600">
+                  <Text color="gray.800" fontSize="xs" fontWeight="600">
                     {fee.type.toUpperCase()}
                   </Text>
                 </Badge>
@@ -384,10 +384,10 @@ export default function PaymentsScreen({
 
     return (
       <Modal isOpen={showPaymentModal} onClose={() => !processing && setShowPaymentModal(false)}>
-        <Modal.Content bg="coolGray.800" maxWidth="450px">
+        <Modal.Content bg="white" maxWidth="450px">
           <Modal.CloseButton isDisabled={processing} />
-          <Modal.Header bg="coolGray.800" borderBottomWidth={0}>
-            <Text color="white" fontSize="lg" fontWeight="bold">
+          <Modal.Header bg="white" borderBottomWidth={0}>
+            <Text color="gray.800" fontSize="lg" fontWeight="bold">
               {paymentStep === 'confirm' && 'Confirm Payment'}
               {paymentStep === 'card' && 'Enter Card Details'}
               {paymentStep === 'processing' && 'Processing Payment'}
@@ -398,25 +398,25 @@ export default function PaymentsScreen({
           <Modal.Body>
             {paymentStep === 'confirm' && (
               <VStack space={4}>
-                <Text color="coolGray.300" fontSize="md">
+                <Text color="gray.700" fontSize="md">
                   You are about to pay for {selectedFees.size} item{selectedFees.size !== 1 ? 's' : ''}:
                 </Text>
                 
-                <Box bg="coolGray.900" p={4} rounded="lg">
+                <Box bg="#F7F9FC" p={4} rounded="lg">
                   <VStack space={2}>
                     {fees.filter(fee => selectedFees.has(fee.id)).map(fee => (
                       <HStack key={fee.id} justifyContent="space-between">
-                        <Text color="coolGray.400" fontSize="sm" flex={1}>
+                        <Text color="gray.600" fontSize="sm" flex={1}>
                           {fee.description}
                         </Text>
-                        <Text color="white" fontSize="sm" fontWeight="600">
+                        <Text color="gray.800" fontSize="sm" fontWeight="600">
                           R{fee.amountZAR.toFixed(2)}
                         </Text>
                       </HStack>
                     ))}
-                    <Divider bg="coolGray.700" my={2} />
+                    <Divider bg="gray.100" my={2} />
                     <HStack justifyContent="space-between">
-                      <Text color="white" fontSize="lg" fontWeight="bold">
+                      <Text color="gray.800" fontSize="lg" fontWeight="bold">
                         Total
                       </Text>
                       <Text color="brand.400" fontSize="xl" fontWeight="bold">
@@ -439,27 +439,27 @@ export default function PaymentsScreen({
 
             {paymentStep === 'card' && (
               <VStack space={4}>
-                <Text color="coolGray.300" fontSize="md">
+                <Text color="gray.700" fontSize="md">
                   Amount to pay: <Text color="brand.400" fontWeight="bold">R{total.toFixed(2)}</Text>
                 </Text>
 
-                <Box bg="coolGray.900" p={4} rounded="lg">
+                <Box bg="#F7F9FC" p={4} rounded="lg">
                   <VStack space={3}>
                     <HStack space={2} alignItems="center">
                       <Text fontSize="lg">💳</Text>
-                      <Text color="white" fontSize="sm" fontWeight="600">
+                      <Text color="gray.800" fontSize="sm" fontWeight="600">
                         Enter Card Details
                       </Text>
                     </HStack>
                     
-                    <Text color="coolGray.400" fontSize="xs">
+                    <Text color="gray.600" fontSize="xs">
                       Your card information is securely processed by Stripe. We never see or store your card details.
                     </Text>
 
                     <VStack space={3} mt={2}>
                       {/* Card Number */}
                       <VStack space={1}>
-                        <Text color="coolGray.500" fontSize="xs">CARD NUMBER</Text>
+                        <Text color="gray.500" fontSize="xs">CARD NUMBER</Text>
                         <Input
                           value={cardNumber}
                           onChangeText={(text) => {
@@ -469,9 +469,9 @@ export default function PaymentsScreen({
                           placeholder="4242 4242 4242 4242"
                           keyboardType="numeric"
                           maxLength={19}
-                          bg="coolGray.800"
-                          borderColor="brand.500"
-                          color="white"
+                          bg="white"
+                          borderColor="primary.400"
+                          color="gray.800"
                           fontSize="md"
                           fontFamily="mono"
                           _focus={{
@@ -484,7 +484,7 @@ export default function PaymentsScreen({
                       {/* Expiry and CVC */}
                       <HStack space={3}>
                         <VStack space={1} flex={1}>
-                          <Text color="coolGray.500" fontSize="xs">EXPIRY</Text>
+                          <Text color="gray.500" fontSize="xs">EXPIRY</Text>
                           <Input
                             value={cardExpiry}
                             onChangeText={(text) => {
@@ -494,9 +494,9 @@ export default function PaymentsScreen({
                             placeholder="MM/YY"
                             keyboardType="numeric"
                             maxLength={5}
-                            bg="coolGray.800"
-                            borderColor="brand.500"
-                            color="white"
+                            bg="white"
+                            borderColor="primary.400"
+                            color="gray.800"
                             fontSize="md"
                             _focus={{
                               borderColor: 'brand.400',
@@ -506,7 +506,7 @@ export default function PaymentsScreen({
                         </VStack>
 
                         <VStack space={1} flex={1}>
-                          <Text color="coolGray.500" fontSize="xs">CVC</Text>
+                          <Text color="gray.500" fontSize="xs">CVC</Text>
                           <Input
                             value={cardCvc}
                             onChangeText={(text) => {
@@ -516,9 +516,9 @@ export default function PaymentsScreen({
                             placeholder="123"
                             keyboardType="numeric"
                             maxLength={3}
-                            bg="coolGray.800"
-                            borderColor="brand.500"
-                            color="white"
+                            bg="white"
+                            borderColor="primary.400"
+                            color="gray.800"
                             fontSize="md"
                             secureTextEntry
                             _focus={{
@@ -568,12 +568,12 @@ export default function PaymentsScreen({
 
             {paymentStep === 'processing' && (
               <VStack space={4} py={6} alignItems="center">
-                <Spinner size="lg" color="brand.500" />
-                <Text color="white" fontSize="md" textAlign="center">
+                <Spinner size="lg" color="primary.400" />
+                <Text color="gray.800" fontSize="md" textAlign="center">
                   Processing your payment...
                 </Text>
                 <Progress value={65} colorScheme="brand" w="full" />
-                <Text color="coolGray.400" fontSize="sm" textAlign="center">
+                <Text color="gray.600" fontSize="sm" textAlign="center">
                   Secure payment via Stripe • Processing transaction
                 </Text>
               </VStack>
@@ -582,13 +582,13 @@ export default function PaymentsScreen({
             {paymentStep === 'success' && (
               <VStack space={4} py={6} alignItems="center">
                 <Text fontSize="6xl">✅</Text>
-                <Text color="white" fontSize="lg" fontWeight="bold" textAlign="center">
+                <Text color="gray.800" fontSize="lg" fontWeight="bold" textAlign="center">
                   Payment Successful!
                 </Text>
-                <Text color="coolGray.300" fontSize="md" textAlign="center">
+                <Text color="gray.700" fontSize="md" textAlign="center">
                   R{total.toFixed(2)} has been processed
                 </Text>
-                <Text color="coolGray.400" fontSize="sm" textAlign="center">
+                <Text color="gray.600" fontSize="sm" textAlign="center">
                   Your receipt has been saved
                 </Text>
               </VStack>
@@ -597,39 +597,39 @@ export default function PaymentsScreen({
             {paymentStep === 'error' && (
               <VStack space={4} py={6} alignItems="center">
                 <Text fontSize="6xl">❌</Text>
-                <Text color="white" fontSize="lg" fontWeight="bold" textAlign="center">
+                <Text color="gray.800" fontSize="lg" fontWeight="bold" textAlign="center">
                   Payment Failed
                 </Text>
                 <Text color="red.300" fontSize="md" textAlign="center">
                   {paymentError}
                 </Text>
-                <Text color="coolGray.400" fontSize="sm" textAlign="center">
+                <Text color="gray.600" fontSize="sm" textAlign="center">
                   Please check your card details and try again
                 </Text>
               </VStack>
             )}
           </Modal.Body>
 
-          <Modal.Footer bg="coolGray.800" borderTopWidth={0}>
+          <Modal.Footer bg="white" borderTopWidth={0}>
             {paymentStep === 'confirm' && (
               <HStack space={3} w="full">
                 <Button
                   flex={1}
                   variant="outline"
-                  borderColor="coolGray.600"
+                  borderColor="gray.300"
                   onPress={() => setShowPaymentModal(false)}
                   isDisabled={processing}
                 >
-                  <Text color="coolGray.300">Cancel</Text>
+                  <Text color="gray.700">Cancel</Text>
                 </Button>
                 <Button
                   flex={1}
-                  bg="brand.500"
+                  bg="primary.400"
                   onPress={proceedToCardEntry}
                   isDisabled={processing}
                   _pressed={{ bg: 'brand.600' }}
                 >
-                  <Text color="white" fontWeight="600">
+                  <Text color="gray.800" fontWeight="600">
                     Continue
                   </Text>
                 </Button>
@@ -640,21 +640,21 @@ export default function PaymentsScreen({
                 <Button
                   flex={1}
                   variant="outline"
-                  borderColor="coolGray.600"
+                  borderColor="gray.300"
                   onPress={() => setPaymentStep('confirm')}
                   isDisabled={processing}
                 >
-                  <Text color="coolGray.300">Back</Text>
+                  <Text color="gray.700">Back</Text>
                 </Button>
                 <Button
                   flex={1}
-                  bg="brand.500"
+                  bg="primary.400"
                   onPress={handlePayment}
                   isLoading={processing}
                   isDisabled={!cardComplete}
                   _pressed={{ bg: 'brand.600' }}
                 >
-                  <Text color="white" fontWeight="600">
+                  <Text color="gray.800" fontWeight="600">
                     Pay R{calculateTotal().toFixed(2)}
                   </Text>
                 </Button>
@@ -676,7 +676,7 @@ export default function PaymentsScreen({
                 }}
                 _pressed={{ bg: paymentStep === 'success' ? 'green.700' : 'brand.600' }}
               >
-                <Text color="white" fontWeight="600">
+                <Text color="gray.800" fontWeight="600">
                   {paymentStep === 'success' ? 'Done' : 'Try Again'}
                 </Text>
               </Button>
@@ -696,7 +696,7 @@ export default function PaymentsScreen({
       <HStack
         px={6}
         py={4}
-        bg="coolGray.800"
+        bg="white"
         alignItems="center"
         space={3}
         borderBottomWidth={1}
@@ -707,11 +707,11 @@ export default function PaymentsScreen({
           onPress={onNavigateBack}
           _pressed={{ bg: 'coolGray.700' }}
         >
-          <Text color="white" fontSize="md">
+          <Text color="gray.800" fontSize="md">
             ← Back
           </Text>
         </Button>
-        <Heading color="white" size="lg" flex={1}>
+        <Heading color="gray.800" size="lg" flex={1}>
           Payments
         </Heading>
       </HStack>
@@ -719,19 +719,19 @@ export default function PaymentsScreen({
       <ScrollView flex={1}>
         <VStack space={6} px={6} py={6}>
           {/* Info Banner */}
-          <Box bg="coolGray.800" p={4} rounded="xl" borderWidth={1} borderColor="coolGray.700">
+          <Box bg="white" p={4} rounded="xl" borderWidth={1} borderColor="gray.200">
             <HStack space={3} alignItems="center">
               <Text fontSize="2xl">🔒</Text>
               <VStack flex={1}>
-                <Text color="white" fontSize="md" fontWeight="600">
+                <Text color="gray.800" fontSize="md" fontWeight="600">
                   Secure Payments with Stripe
                 </Text>
-                <Text color="coolGray.400" fontSize="sm">
+                <Text color="gray.600" fontSize="sm">
                   Your payment information is encrypted and secure
                 </Text>
               </VStack>
               <Badge bg="green.600" rounded="full" px={2} py={1}>
-                <Text color="white" fontSize="xs" fontWeight="600">
+                <Text color="gray.800" fontSize="xs" fontWeight="600">
                   TEST MODE
                 </Text>
               </Badge>
@@ -741,26 +741,26 @@ export default function PaymentsScreen({
           {/* Loading State */}
           {loading ? (
             <Box py={10} alignItems="center">
-              <Spinner size="lg" color="brand.500" />
-              <Text color="coolGray.400" mt={4} fontSize="md">
+              <Spinner size="lg" color="primary.400" />
+              <Text color="gray.600" mt={4} fontSize="md">
                 Loading fees...
               </Text>
             </Box>
           ) : fees.length === 0 ? (
             /* No Fees */
             <Box
-              bg="coolGray.800"
+              bg="white"
               p={8}
               rounded="xl"
               borderWidth={1}
-              borderColor="coolGray.700"
+              borderColor="gray.200"
               alignItems="center"
             >
               <Text fontSize="6xl">✅</Text>
-              <Text color="white" fontSize="lg" fontWeight="600" mt={4}>
+              <Text color="gray.800" fontSize="lg" fontWeight="600" mt={4}>
                 All Paid Up!
               </Text>
-              <Text color="coolGray.400" fontSize="sm" mt={2} textAlign="center">
+              <Text color="gray.600" fontSize="sm" mt={2} textAlign="center">
                 You have no outstanding payments at this time
               </Text>
             </Box>
@@ -769,14 +769,14 @@ export default function PaymentsScreen({
             <>
               {/* Select All Controls */}
               <HStack justifyContent="space-between" alignItems="center">
-                <Text color="coolGray.400" fontSize="sm">
+                <Text color="gray.600" fontSize="sm">
                   {fees.length} item{fees.length !== 1 ? 's' : ''} outstanding
                 </Text>
                 <HStack space={2}>
                   <Button
                     size="xs"
                     variant="outline"
-                    borderColor="brand.500"
+                    borderColor="primary.400"
                     onPress={selectAllFees}
                     _text={{ color: 'brand.400', fontSize: 'xs' }}
                   >
@@ -785,7 +785,7 @@ export default function PaymentsScreen({
                   <Button
                     size="xs"
                     variant="outline"
-                    borderColor="coolGray.600"
+                    borderColor="gray.300"
                     onPress={deselectAllFees}
                     _text={{ color: 'coolGray.400', fontSize: 'xs' }}
                   >
@@ -806,7 +806,7 @@ export default function PaymentsScreen({
       {/* Bottom Payment Bar */}
       {fees.length > 0 && (
         <Box
-          bg="coolGray.800"
+          bg="white"
           px={6}
           py={4}
           borderTopWidth={1}
@@ -815,10 +815,10 @@ export default function PaymentsScreen({
           <VStack space={3}>
             <HStack justifyContent="space-between" alignItems="center">
               <VStack>
-                <Text color="coolGray.400" fontSize="sm">
+                <Text color="gray.600" fontSize="sm">
                   {selectedFees.size} item{selectedFees.size !== 1 ? 's' : ''} selected
                 </Text>
-                <Text color="white" fontSize="2xl" fontWeight="bold">
+                <Text color="gray.800" fontSize="2xl" fontWeight="bold">
                   R{total.toFixed(2)}
                 </Text>
               </VStack>
@@ -832,7 +832,7 @@ export default function PaymentsScreen({
               >
                 <HStack space={2} alignItems="center">
                   <Text fontSize="lg">💳</Text>
-                  <Text color="white" fontSize="md" fontWeight="600">
+                  <Text color="gray.800" fontSize="md" fontWeight="600">
                     Pay Now
                   </Text>
                 </HStack>

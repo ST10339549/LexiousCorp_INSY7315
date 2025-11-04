@@ -21,7 +21,8 @@ import {
 } from "native-base";
 import { BackHandler } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
-import { MaterialIcons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { AppCard } from "../components/shared";
 import { subscribeEvents, Event } from "../services/events";
 
 type ParentEventsCalendarProps = {
@@ -339,14 +340,14 @@ export default function ParentEventsCalendar({
                       <Divider my={1} />
 
                       <HStack alignItems="center" space={2}>
-                        <MaterialIcons name="schedule" size={16} color="#4B5563" />
+                        <Ionicons name="time-outline" size={16} color="#4B5563" />
                         <Text fontSize="sm" color="gray.600">
                           {event.startsAt} - {event.endsAt}
                         </Text>
                       </HStack>
 
                       <HStack alignItems="center" space={2}>
-                        <MaterialIcons name="place" size={16} color="#4B5563" />
+                        <Ionicons name="location-outline" size={16} color="#4B5563" />
                         <Text fontSize="sm" color="gray.600">
                           {event.location}
                         </Text>
@@ -386,21 +387,21 @@ export default function ParentEventsCalendar({
                     <Divider my={1} />
 
                     <HStack alignItems="center" space={2}>
-                      <MaterialIcons name="event" size={16} color="#4B5563" />
+                      <Ionicons name="calendar-outline" size={16} color="#4B5563" />
                       <Text fontSize="sm" color="gray.600">
                         {formatDate(event.date)}
                       </Text>
                     </HStack>
 
                     <HStack alignItems="center" space={2}>
-                      <MaterialIcons name="schedule" size={16} color="#4B5563" />
+                      <Ionicons name="time-outline" size={16} color="#4B5563" />
                       <Text fontSize="sm" color="gray.600">
                         {event.startsAt} - {event.endsAt}
                       </Text>
                     </HStack>
 
                     <HStack alignItems="center" space={2}>
-                      <MaterialIcons name="place" size={16} color="#4B5563" />
+                      <Ionicons name="location-outline" size={16} color="#4B5563" />
                       <Text fontSize="sm" color="gray.600">
                         {event.location}
                       </Text>

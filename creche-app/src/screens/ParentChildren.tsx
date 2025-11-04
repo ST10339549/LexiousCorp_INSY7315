@@ -13,7 +13,7 @@ import {
   Badge,
 } from "native-base";
 import { BackHandler } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { listenChildrenByParent, Child } from "../services/children";
 
 type ParentChildrenProps = {
@@ -92,15 +92,15 @@ export default function ParentChildren({
 
     return (
       <Box key={child.id} mb={3}>
-        <Box bg="coolGray.800" rounded="xl" p={4} shadow={2}>
+        <Box bg="white" rounded="xl" p={4} shadow={2}>
           <VStack space={2}>
             {/* Child Name and Age */}
             <HStack justifyContent="space-between" alignItems="center">
-              <Heading color="white" size="md">
+              <Heading color="gray.800" size="md">
                 {child.name}
               </Heading>
-              <Badge bg="brand.500" rounded="full" px={3} py={1}>
-                <Text color="white" fontSize="xs" fontWeight="600">
+              <Badge bg="primary.400" rounded="full" px={3} py={1}>
+                <Text color="gray.800" fontSize="xs" fontWeight="600">
                   {age} {age === 1 ? "year" : "years"}
                 </Text>
               </Badge>
@@ -108,8 +108,8 @@ export default function ParentChildren({
 
             {/* Date of Birth */}
             <HStack space={2} alignItems="center">
-              <Icon as={MaterialIcons} name="cake" size="sm" color="coolGray.400" />
-              <Text color="coolGray.400" fontSize="sm">
+              <Icon as={Ionicons} name="calendar-outline" size="sm" color="gray.600" />
+              <Text color="gray.600" fontSize="sm">
                 Born: {new Date(child.dateOfBirth).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
@@ -122,7 +122,7 @@ export default function ParentChildren({
             {hasAllergies && (
               <VStack space={1} mt={2}>
                 <HStack space={2} alignItems="center">
-                  <Icon as={MaterialIcons} name="warning" size="sm" color="red.400" />
+                  <Icon as={Ionicons} name="warning-outline" size="sm" color="red.400" />
                   <Text color="red.400" fontSize="sm" fontWeight="600">
                     Allergies:
                   </Text>
@@ -130,7 +130,7 @@ export default function ParentChildren({
                 <HStack flexWrap="wrap" space={2} mt={1}>
                   {child.allergies.map((allergy, index) => (
                     <Box key={index} bg="red.500" px={3} py={1} rounded="full" mb={1}>
-                      <Text color="white" fontSize="xs" fontWeight="500">
+                      <Text color="gray.800" fontSize="xs" fontWeight="500">
                         {allergy}
                       </Text>
                     </Box>
@@ -140,38 +140,38 @@ export default function ParentChildren({
             )}
           </VStack>
         </Box>
-        <Divider bg="coolGray.700" my={2} />
+        <Divider bg="gray.100" my={2} />
       </Box>
     );
   };
 
   return (
-    <Box flex={1} bg="coolGray.900" safeArea>
+    <Box flex={1} bg="#F7F9FC" safeArea>
       {/* Header */}
-      <Box bg="coolGray.800" px={6} py={4} shadow={3}>
+      <Box bg="white" px={6} py={4} shadow={3}>
         <VStack space={2}>
           <HStack alignItems="center" space={3}>
             {onBack && (
               <Icon
-                as={MaterialIcons}
+                as={Ionicons}
                 name="arrow-back"
                 size="lg"
-                color="white"
+                color="gray.800"
                 onPress={onBack}
               />
             )}
-            <Heading color="white" size="xl" flex={1}>
+            <Heading color="gray.800" size="xl" flex={1}>
               My Children
             </Heading>
           </HStack>
           {parentName && (
-            <Text color="coolGray.400" fontSize="md">
+            <Text color="gray.600" fontSize="md">
               Parent: {parentName}
             </Text>
           )}
           <HStack space={2}>
             <Badge bg="green.500" px={3} py={1} rounded="full">
-              <Text color="white" fontSize="xs" fontWeight="600">
+              <Text color="gray.800" fontSize="xs" fontWeight="600">
                 {children.length} {children.length === 1 ? "Child" : "Children"}
               </Text>
             </Badge>
@@ -182,8 +182,8 @@ export default function ParentChildren({
       {/* Children List */}
       {loading ? (
         <Box flex={1} justifyContent="center" alignItems="center">
-          <Spinner size="lg" color="brand.500" />
-          <Text color="coolGray.400" mt={4} fontSize="md">
+          <Spinner size="lg" color="primary.400" />
+          <Text color="gray.600" mt={4} fontSize="md">
             Loading children...
           </Text>
         </Box>
@@ -191,8 +191,8 @@ export default function ParentChildren({
         <ScrollView flex={1} px={6} py={4}>
           {children.length === 0 ? (
             <Box mt={10} alignItems="center">
-              <Icon as={MaterialIcons} name="child-care" size="4xl" color="coolGray.600" />
-              <Text color="coolGray.500" fontSize="lg" mt={4} textAlign="center">
+              <Icon as={Ionicons} name="people-outline" size="4xl" color="gray.600" />
+              <Text color="gray.500" fontSize="lg" mt={4} textAlign="center">
                 No children registered yet
               </Text>
               <Text color="coolGray.600" fontSize="sm" mt={2} textAlign="center">
@@ -215,9 +215,9 @@ export default function ParentChildren({
           size="lg"
           bg="green.600"
           onPress={onAddChild}
-          icon={<Icon as={MaterialIcons} name="add" size="lg" color="white" />}
+          icon={<Icon as={Ionicons} name="add-outline" size="lg" color="gray.800" />}
           label={
-            <Text color="white" fontSize="md" fontWeight="600">
+            <Text color="gray.800" fontSize="md" fontWeight="600">
               Add Child
             </Text>
           }

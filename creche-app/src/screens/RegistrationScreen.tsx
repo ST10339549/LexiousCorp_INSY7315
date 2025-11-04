@@ -6,15 +6,17 @@ import {
   Box,
   VStack,
   Text,
-  FormControl,
-  Input,
-  Button,
+  Heading,
   Spinner,
   Pressable,
+  HStack,
+  ScrollView,
 } from "native-base";
+import { Ionicons } from "@expo/vector-icons";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { setDoc, doc } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import { AppButton, AppInput } from "../components/shared";
 
 const registerSchema = z
   .object({
@@ -102,176 +104,181 @@ export default function RegisterScreen({
   }
 
   return (
-    <Box flex={1} bg="bg.900" px={6} py={12} alignItems="center">
-      <Box bg="bg.800" w="100%" maxW="400px" p={6} rounded="2xl">
-        <VStack space={4}>
-          <Text color="white" fontSize="xl" fontWeight="600">
-            Create account ✨
-          </Text>
-          <Text color="coolGray.400" fontSize="sm">
-            Parent / Admin access to Little Lemon Creche
-          </Text>
-
-          {/* Name */}
-          <FormControl isInvalid={"fullName" in errors}>
-            <FormControl.Label _text={{ color: "coolGray.300" }}>
-              Full Name
-            </FormControl.Label>
-            <Controller
-              control={control}
-              name="fullName"
-              render={({ field: { value, onChange } }) => (
-                <Input
-                  bg="bg.700"
-                  color="white"
-                  borderColor="bg.700"
-                  rounded="lg"
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="John Doe"
-                  placeholderTextColor="#666"
-                  _focus={{
-                    borderColor: "brand.500",
-                    borderWidth: 2,
-                  }}
-                />
-              )}
-            />
-            {errors.fullName && (
-              <FormControl.ErrorMessage>
-                {errors.fullName.message}
-              </FormControl.ErrorMessage>
-            )}
-          </FormControl>
-
-          {/* Email */}
-          <FormControl isInvalid={"email" in errors}>
-            <FormControl.Label _text={{ color: "coolGray.300" }}>
-              Email
-            </FormControl.Label>
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { value, onChange } }) => (
-                <Input
-                  bg="bg.700"
-                  color="white"
-                  borderColor="bg.700"
-                  rounded="lg"
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="you@email.com"
-                  placeholderTextColor="#666"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  _focus={{
-                    borderColor: "brand.500",
-                    borderWidth: 2,
-                  }}
-                />
-              )}
-            />
-            {errors.email && (
-              <FormControl.ErrorMessage>
-                {errors.email.message}
-              </FormControl.ErrorMessage>
-            )}
-          </FormControl>
-
-          {/* Password */}
-          <FormControl isInvalid={"password" in errors}>
-            <FormControl.Label _text={{ color: "coolGray.300" }}>
-              Password
-            </FormControl.Label>
-            <Controller
-              control={control}
-              name="password"
-              render={({ field: { value, onChange } }) => (
-                <Input
-                  bg="bg.700"
-                  color="white"
-                  borderColor="bg.700"
-                  rounded="lg"
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="••••••••"
-                  placeholderTextColor="#666"
-                  secureTextEntry
-                  _focus={{
-                    borderColor: "brand.500",
-                    borderWidth: 2,
-                  }}
-                />
-              )}
-            />
-            {errors.password && (
-              <FormControl.ErrorMessage>
-                {errors.password.message}
-              </FormControl.ErrorMessage>
-            )}
-          </FormControl>
-
-          {/* Confirm Password */}
-          <FormControl isInvalid={"confirm" in errors}>
-            <FormControl.Label _text={{ color: "coolGray.300" }}>
-              Confirm Password
-            </FormControl.Label>
-            <Controller
-              control={control}
-              name="confirm"
-              render={({ field: { value, onChange } }) => (
-                <Input
-                  bg="bg.700"
-                  color="white"
-                  borderColor="bg.700"
-                  rounded="lg"
-                  value={value}
-                  onChangeText={onChange}
-                  placeholder="••••••••"
-                  placeholderTextColor="#666"
-                  secureTextEntry
-                  _focus={{
-                    borderColor: "brand.500",
-                    borderWidth: 2,
-                  }}
-                />
-              )}
-            />
-            {errors.confirm && (
-              <FormControl.ErrorMessage>
-                {errors.confirm.message}
-              </FormControl.ErrorMessage>
-            )}
-          </FormControl>
-
-          {/* Register button */}
-          <Button
-            mt={2}
-            bg="brand.500"
-            _pressed={{ opacity: 0.8 }}
-            rounded="lg"
-            onPress={handleSubmit(submit)}
-            isDisabled={isSubmitting}
+    <Box flex={1} bg="background.secondary" safeArea>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <VStack space={4} px={6} py={6} alignItems="center">
+          <Box
+            bg="accent.400"
+            rounded="full"
+            p={5}
+            shadow="lg"
           >
-            {isSubmitting ? <Spinner color="white" /> : "Create Account"}
-          </Button>
-
-          {/* Switch to Login */}
-          <Pressable
-            onPress={onGoLogin}
-            alignSelf="center"
-            mt={2}
-            _pressed={{ opacity: 0.6 }}
-          >
-            <Text color="coolGray.400" fontSize="xs">
-              Already registered?{" "}
-              <Text color="brand.500" fontWeight="600">
-                Log in
-              </Text>
+            <Ionicons name="person-add" size={40} color="white" />
+          </Box>
+          
+          <VStack space={1} alignItems="center">
+            <Heading size="xl" color="gray.800" fontWeight="700">
+              Create Account
+            </Heading>
+            <Text color="gray.500" fontSize="md" textAlign="center">
+              Join Little Lemon Creche
             </Text>
-          </Pressable>
+          </VStack>
         </VStack>
-      </Box>
+
+        {/* Registration Form Card */}
+        <Box px={6} pb={8}>
+          <Box
+            bg="white"
+            rounded="lg"
+            p={6}
+            shadow="md"
+            borderWidth={1}
+            borderColor="gray.100"
+          >
+            <VStack space={4}>
+              {/* Full Name Input */}
+              <Controller
+                control={control}
+                name="fullName"
+                render={({ field: { value, onChange } }) => (
+                  <AppInput
+                    label="Full Name"
+                    value={value}
+                    onChangeText={onChange}
+                    placeholder="John Doe"
+                    error={errors.fullName?.message}
+                    isRequired
+                  />
+                )}
+              />
+
+              {/* Email Input */}
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { value, onChange } }) => (
+                  <AppInput
+                    label="Email Address"
+                    value={value}
+                    onChangeText={onChange}
+                    placeholder="you@example.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    error={errors.email?.message}
+                    isRequired
+                  />
+                )}
+              />
+
+              {/* Password Input */}
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { value, onChange } }) => (
+                  <AppInput
+                    label="Password"
+                    value={value}
+                    onChangeText={onChange}
+                    placeholder="Create a strong password"
+                    secureTextEntry
+                    error={errors.password?.message}
+                    isRequired
+                  />
+                )}
+              />
+
+              {/* Password Requirements */}
+              <Box bg="info.50" p={3} rounded="md" borderWidth={1} borderColor="info.200">
+                <VStack space={1}>
+                  <Text fontSize="xs" color="info.700" fontWeight="600">
+                    Password must contain:
+                  </Text>
+                  <HStack space={1} alignItems="center">
+                    <Ionicons name="checkmark-circle" size={14} color="#06B6D4" />
+                    <Text fontSize="xs" color="info.700">At least 8 characters</Text>
+                  </HStack>
+                  <HStack space={1} alignItems="center">
+                    <Ionicons name="checkmark-circle" size={14} color="#06B6D4" />
+                    <Text fontSize="xs" color="info.700">Upper & lowercase letters</Text>
+                  </HStack>
+                  <HStack space={1} alignItems="center">
+                    <Ionicons name="checkmark-circle" size={14} color="#06B6D4" />
+                    <Text fontSize="xs" color="info.700">Numbers & special characters</Text>
+                  </HStack>
+                </VStack>
+              </Box>
+
+              {/* Confirm Password Input */}
+              <Controller
+                control={control}
+                name="confirm"
+                render={({ field: { value, onChange } }) => (
+                  <AppInput
+                    label="Confirm Password"
+                    value={value}
+                    onChangeText={onChange}
+                    placeholder="Re-enter your password"
+                    secureTextEntry
+                    error={errors.confirm?.message}
+                    isRequired
+                  />
+                )}
+              />
+
+              {/* Register Button */}
+              <AppButton
+                mt={2}
+                colorScheme="accent"
+                onPress={handleSubmit(submit)}
+                isDisabled={isSubmitting}
+                isLoading={isSubmitting}
+                isLoadingText="Creating account..."
+              >
+                {isSubmitting ? <Spinner color="white" /> : "Create Account"}
+              </AppButton>
+
+              {/* Divider */}
+              <HStack alignItems="center" space={2} my={2}>
+                <Box flex={1} h="1px" bg="gray.200" />
+                <Text color="gray.400" fontSize="xs">
+                  OR
+                </Text>
+                <Box flex={1} h="1px" bg="gray.200" />
+              </HStack>
+
+              {/* Login Link */}
+              <Pressable
+                onPress={onGoLogin}
+                alignSelf="center"
+                p={2}
+                rounded="md"
+                _pressed={{ bg: "gray.50" }}
+              >
+                <HStack space={1} alignItems="center">
+                  <Text color="gray.600" fontSize="sm">
+                    Already have an account?
+                  </Text>
+                  <Text color="primary.400" fontSize="sm" fontWeight="600">
+                    Sign In
+                  </Text>
+                </HStack>
+              </Pressable>
+            </VStack>
+          </Box>
+
+          {/* Footer Info */}
+          <VStack space={2} alignItems="center" mt={6}>
+            <HStack space={2} alignItems="center">
+              <Ionicons name="shield-checkmark" size={16} color="#4CC38A" />
+              <Text color="gray.500" fontSize="xs">
+                Your data is secure and encrypted
+              </Text>
+            </HStack>
+          </VStack>
+        </Box>
+      </ScrollView>
     </Box>
   );
 }

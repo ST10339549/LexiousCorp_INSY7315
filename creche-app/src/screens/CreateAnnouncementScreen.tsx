@@ -150,7 +150,7 @@ export default function CreateAnnouncementScreen({
   };
 
   return (
-    <ScrollView bg="coolGray.50" flex={1}>
+    <ScrollView bg="#F7F9FC" flex={1}>
       <Box safeArea p={4}>
         <VStack space={4}>
           {/* Header */}

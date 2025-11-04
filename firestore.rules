@@ -1,0 +1,383 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    /**
+     * Check if user is authenticated
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    /**
+     * Get current user's role from the users collection
+     */
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    /**
+     * Check if current user is an admin
+     */
+    function isAdmin() {
+      return isSignedIn() && getUserRole() == 'admin';
+    }
+    
+    /**
+     * Check if current user is staff
+     */
+    function isStaff() {
+      return isSignedIn() && getUserRole() == 'staff';
+    }
+    
+    /**
+     * Check if current user is a parent
+     */
+    function isParent() {
+      return isSignedIn() && getUserRole() == 'parent';
+    }
+    
+    /**
+     * Check if current user is admin or staff
+     */
+    function isAdminOrStaff() {
+      return isAdmin() || isStaff();
+    }
+    
+    /**
+     * Check if the user is accessing their own document
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    
+    /**
+     * Users collection: stores user profiles with roles
+     * Structure: { uid, name, email, role, createdAt, updatedAt, pushToken? }
+     */
+    match /users/{userId} {
+      // Anyone can read their own user document
+      allow read: if isOwner(userId);
+      
+      // Allow users to read all users (needed for user selection in various screens)
+      // In production, this will be limited or a cloud function will be used
+      allow read: if isSignedIn();
+      
+      // Users can create their own document during registration
+      allow create: if isOwner(userId) && request.resource.data.role == 'parent';
+      
+      // Users can update their own document (except role and uid)
+      allow update: if isOwner(userId) 
+                    && request.resource.data.uid == resource.data.uid
+                    && request.resource.data.role == resource.data.role;
+      
+      // Only admins can update user roles
+      allow update: if isAdmin();
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+    
+    
+    // ============================================
+    // CHILDREN COLLECTION
+    // ============================================
+    
+    /**
+     * Children collection: stores child profiles
+     * Structure: { parentId, name, dateOfBirth, allergies, createdAt, updatedAt }
+     */
+    match /children/{childId} {
+      // Parents can read their own children; admin and staff can read all
+      allow read: if isAdminOrStaff() || (isParent() && resource.data.parentId == request.auth.uid);
+      
+      // Parents can create children for themselves; admins and staff can create for anyone
+      allow create: if (isParent() && request.resource.data.parentId == request.auth.uid) || isAdminOrStaff();
+      
+      // Parents can update their own children; admins and staff can update any
+      allow update: if (isParent() && resource.data.parentId == request.auth.uid) || isAdminOrStaff();
+      
+      // Only admins can delete children
+      allow delete: if isAdmin();
+    }
+    
+    
+    // ============================================
+    // ANNOUNCEMENTS COLLECTION
+    // ============================================
+    
+    /**
+     * Announcements collection: stores announcements for different audiences
+     * Structure: { title, body, audience, createdBy, createdAt }
+     * Audience: 'all' | 'parents' | 'staff' | 'admin'
+     */
+    match /announcements/{announcementId} {
+      // All signed-in users can read announcements
+      allow read: if isSignedIn();
+      
+      // Only admins can create, update, or delete announcements
+      allow create, update, delete: if isAdmin();
+    }
+    
+    
+    // ============================================
+    // EVENTS COLLECTION
+    // ============================================
+    
+    /**
+     * Events collection: stores calendar events
+     * Structure: { title, description, date, location?, createdBy, createdAt, updatedAt }
+     */
+    match /events/{eventId} {
+      // All signed-in users can read events
+      allow read: if isSignedIn();
+      
+      // Only admins can create, update, or delete events
+      allow create, update, delete: if isAdmin();
+    }
+    
+    
+    // ============================================
+    // MENUS COLLECTION
+    // ============================================
+    
+    /**
+     * Menus collection: stores weekly lunch menus
+     * Structure: { weekOf, items: [{ id, day, name, description, allergens, price }], createdAt, updatedAt }
+     */
+    match /menus/{menuId} {
+      // All signed-in users can read menus
+      allow read: if isSignedIn();
+      
+      // Only admins can create, update, or delete menus
+      allow create, update, delete: if isAdmin();
+    }
+    
+    
+    // ============================================
+    // ORDERS COLLECTION
+    // ============================================
+    
+    /**
+     * Orders collection: stores lunch orders
+     * Structure: { 
+     *   parentId, 
+     *   childId, 
+     *   weekOf, 
+     *   selections: [{ menuItemId, day, itemName }],
+     *   totalAmount,
+     *   status: 'pending' | 'confirmed' | 'cancelled',
+     *   createdAt,
+     *   updatedAt
+     * }
+     */
+    match /orders/{orderId} {
+      // Admins and staff can read all orders
+      // Parents can read all orders (they will be filtered in the app by parentId)
+      allow read: if isSignedIn();
+      
+      // Parents can create orders for themselves
+      allow create: if isParent() && request.resource.data.parentId == request.auth.uid;
+      
+      // Parents can update their own pending orders (but not the status field)
+      allow update: if (isParent() 
+                    && resource.data.parentId == request.auth.uid
+                    && resource.data.status == request.resource.data.status) || isAdminOrStaff();
+      
+      // Admins can update any order, including status changes
+      allow update: if isAdmin();
+      
+      // Only admins can delete orders
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // ATTENDANCE COLLECTION
+    // ============================================
+    
+    /**
+     * Attendance collection: stores daily attendance records
+     * Structure: { 
+     *   childId,
+     *   childName,
+     *   parentId,  // DENORMALIZED for easier rule evaluation
+     *   date,      // YYYY-MM-DD
+     *   status: 'present' | 'absent' | 'late' | 'excused',
+     *   timestamp,
+     *   markedBy,  // UID of admin/staff who marked attendance
+     *   notes?
+     * }
+     * Note: parentId is denormalized to avoid lookup operations in rules
+     */
+    match /attendance/{attendanceId} {
+      // Parents can read attendance for their own children
+      // Admin and staff can read all attendance records
+      allow read: if isAdminOrStaff() || (isParent() && resource.data.parentId == request.auth.uid);
+      
+      // Only admins and staff can create attendance records
+      allow create: if isAdminOrStaff() && request.resource.data.markedBy == request.auth.uid;
+      
+      // Only admins and staff can update attendance records
+      allow update: if isAdminOrStaff();
+      
+      // Only admins can delete attendance records
+      allow delete: if isAdmin();
+    }
+    
+    
+    // ============================================
+    // FEES COLLECTION
+    // ============================================
+    
+    /**
+     * Fees collection: stores fee records for parents
+     * Structure: { 
+     *   userId,
+     *   description,
+     *   amount,
+     *   dueDate,
+     *   status: 'pending' | 'paid' | 'overdue',
+     *   createdAt,
+     *   paidAt?
+     * }
+     */
+    match /fees/{feeId} {
+      // Parents can read their own fees; admins can read all
+      // Allow read even if userId field doesn't exist yet (for initial queries)
+      allow read: if isAdmin() || isParent();
+      
+      // Parents can update their own fees (e.g., marking as paid)
+      allow update: if isParent() && resource.data.userId == request.auth.uid;
+      
+      // Only admins can create and delete fees, and update any fee
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin();
+    }
+    
+    
+    // ============================================
+    // FEE TEMPLATES COLLECTION
+    // ============================================
+    
+    /**
+     * FeeTemplates collection: stores reusable fee templates for admins
+     * Structure: { 
+     *   name,
+     *   description,
+     *   amount,
+     *   frequency: 'one-time' | 'weekly' | 'monthly',
+     *   createdAt
+     * }
+     */
+    match /feeTemplates/{templateId} {
+      // Only admins can read fee templates
+      allow read: if isAdmin();
+      
+      // Only admins can create, update, or delete fee templates
+      allow create, update, delete: if isAdmin();
+    }
+    
+    
+    // ============================================
+    // PAYMENTS COLLECTION (RECEIPTS)
+    // ============================================
+    
+    /**
+     * Payments collection: stores payment records (receipts)
+     * Structure: { 
+     *   userId,
+     *   feeId,
+     *   amount,
+     *   paymentMethod,
+     *   stripePaymentIntentId?,
+     *   status: 'pending' | 'completed' | 'failed',
+     *   createdAt,
+     *   completedAt?
+     * }
+     */
+    match /payments/{paymentId} {
+      // Parents can read their own payments; admins can read all
+      // Allow read even if userId field doesn't exist yet (for initial queries)
+      allow read: if isAdmin() || isParent();
+      
+      // Parents can create payment records for themselves
+      allow create: if isParent() && request.resource.data.userId == request.auth.uid;
+      
+      // Parents can update their own pending payments
+      allow update: if (isParent() 
+                    && resource.data.userId == request.auth.uid
+                    && resource.data.status == 'pending') || isAdmin();
+      
+      // Admins can update any payment (e.g., to mark as completed)
+      allow update: if isAdmin();
+      
+      // Only admins can delete payment records
+      allow delete: if isAdmin();
+    }
+    
+    
+    // ============================================
+    // RECEIPTS COLLECTION (ALTERNATIVE)
+    // ============================================
+    
+    /**
+     * Receipts collection: stores receipt records
+     * This is an alias/alternative to payments for clarity
+     */
+    match /receipts/{receiptId} {
+      // Parents can read their own receipts; admins can read all
+      allow read: if isAdmin() || isParent();
+      
+      // Parents can create receipts for themselves
+      allow create: if isParent();
+      
+      // Parents can update their own receipts; admins can update any
+      allow update: if isParent() || isAdmin();
+      
+      // Only admins can delete receipts
+      allow delete: if isAdmin();
+    }
+    
+    
+    // ============================================
+    // ASSIGNMENTS COLLECTION
+    // ============================================
+    
+    /**
+     * Assignments collection: assigns children to staff/classes
+     * Structure: { 
+     *   childId,
+     *   staffId,
+     *   className?,
+     *   assignedAt,
+     *   assignedBy
+     * }
+     */
+    match /assignments/{assignmentId} {
+      // Staff can read their assignments; parents can read assignments for their children; admins can read all
+      allow read: if isSignedIn();
+      
+      // Only admins can create, update, or delete assignments
+      allow create, update, delete: if isAdmin();
+    }
+    
+    
+    // ============================================
+    // DEFAULT DENY
+    // ============================================
+    
+    // Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

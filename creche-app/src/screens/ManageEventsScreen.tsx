@@ -28,7 +28,7 @@ import {
   Center,
 } from "native-base";
 import { BackHandler } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import {
   createEvent,
   updateEvent,
@@ -426,7 +426,7 @@ export default function ManageEventsScreen({
             </Heading>
             <HStack space={2}>
               <Button
-                leftIcon={<MaterialIcons name="add" size={20} color="white" />}
+                leftIcon={<Ionicons name="add" size={20} color="gray.800" />}
                 onPress={handleCreate}
                 colorScheme="primary"
               >
@@ -497,21 +497,21 @@ export default function ManageEventsScreen({
 
                       <VStack space={1}>
                         <HStack alignItems="center" space={2}>
-                          <MaterialIcons name="event" size={16} color="#4B5563" />
+                          <Ionicons name="calendar-outline" size={16} color="#4B5563" />
                           <Text fontSize="sm" color="gray.600">
                             {formatDate(event.date)}
                           </Text>
                         </HStack>
 
                         <HStack alignItems="center" space={2}>
-                          <MaterialIcons name="schedule" size={16} color="#4B5563" />
+                          <Ionicons name="time-outline" size={16} color="#4B5563" />
                           <Text fontSize="sm" color="gray.600">
                             {event.startsAt} - {event.endsAt}
                           </Text>
                         </HStack>
 
                         <HStack alignItems="center" space={2}>
-                          <MaterialIcons name="place" size={16} color="#4B5563" />
+                          <Ionicons name="location-outline" size={16} color="#4B5563" />
                           <Text fontSize="sm" color="gray.600">
                             {event.location}
                           </Text>
@@ -521,13 +521,13 @@ export default function ManageEventsScreen({
 
                     <VStack space={2}>
                       <IconButton
-                        icon={<MaterialIcons name="edit" size={20} color="#3B82F6" />}
+                        icon={<Ionicons name="pencil-outline" size={20} color="#3B82F6" />}
                         onPress={() => handleEdit(event)}
                         variant="ghost"
                         _pressed={{ bg: "blue.100" }}
                       />
                       <IconButton
-                        icon={<MaterialIcons name="delete" size={20} color="#EF4444" />}
+                        icon={<Ionicons name="trash-outline" size={20} color="#EF4444" />}
                         onPress={() => handleDelete(event.id, event.title)}
                         variant="ghost"
                         _pressed={{ bg: "red.100" }}
@@ -588,10 +588,10 @@ export default function ManageEventsScreen({
                   <Pressable onPress={() => setShowDatePicker(true)} isDisabled={isSubmitting}>
                     <Box
                       borderWidth={1}
-                      borderColor="coolGray.300"
+                      borderColor="gray.300"
                       borderRadius="md"
                       p={3}
-                      bg={isSubmitting ? "coolGray.100" : "white"}
+                      bg={isSubmitting ? "gray.100" : "white"}
                     >
                       <HStack alignItems="center" justifyContent="space-between">
                         <Text color={date ? "gray.800" : "gray.400"}>
@@ -602,7 +602,7 @@ export default function ManageEventsScreen({
                             day: 'numeric' 
                           }) : "Select date"}
                         </Text>
-                        <MaterialIcons name="calendar-today" size={20} color="#3B82F6" />
+                        <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
                       </HStack>
                     </Box>
                   </Pressable>
@@ -616,16 +616,16 @@ export default function ManageEventsScreen({
                   <Pressable onPress={() => setShowStartTimePicker(true)} isDisabled={isSubmitting}>
                     <Box
                       borderWidth={1}
-                      borderColor="coolGray.300"
+                      borderColor="gray.300"
                       borderRadius="md"
                       p={3}
-                      bg={isSubmitting ? "coolGray.100" : "white"}
+                      bg={isSubmitting ? "gray.100" : "white"}
                     >
                       <HStack alignItems="center" justifyContent="space-between">
                         <Text color={startsAt ? "gray.800" : "gray.400"}>
                           {startsAt || "Select start time"}
                         </Text>
-                        <MaterialIcons name="access-time" size={20} color="#3B82F6" />
+                        <Ionicons name="time-outline" size={20} color="#3B82F6" />
                       </HStack>
                     </Box>
                   </Pressable>
@@ -639,16 +639,16 @@ export default function ManageEventsScreen({
                   <Pressable onPress={() => setShowEndTimePicker(true)} isDisabled={isSubmitting}>
                     <Box
                       borderWidth={1}
-                      borderColor="coolGray.300"
+                      borderColor="gray.300"
                       borderRadius="md"
                       p={3}
-                      bg={isSubmitting ? "coolGray.100" : "white"}
+                      bg={isSubmitting ? "gray.100" : "white"}
                     >
                       <HStack alignItems="center" justifyContent="space-between">
                         <Text color={endsAt ? "gray.800" : "gray.400"}>
                           {endsAt || "Select end time"}
                         </Text>
-                        <MaterialIcons name="access-time" size={20} color="#3B82F6" />
+                        <Ionicons name="time-outline" size={20} color="#3B82F6" />
                       </HStack>
                     </Box>
                   </Pressable>
@@ -722,7 +722,7 @@ export default function ManageEventsScreen({
             <VStack space={3}>
               <HStack justifyContent="space-between" alignItems="center">
                 <IconButton
-                  icon={<MaterialIcons name="chevron-left" size={24} />}
+                  icon={<Ionicons name="chevron-back-outline" size={24} />}
                   onPress={() => {
                     const newDate = new Date(selectedDate);
                     newDate.setMonth(newDate.getMonth() - 1);
@@ -733,7 +733,7 @@ export default function ManageEventsScreen({
                   {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                 </Text>
                 <IconButton
-                  icon={<MaterialIcons name="chevron-right" size={24} />}
+                  icon={<Ionicons name="chevron-forward-outline" size={24} />}
                   onPress={() => {
                     const newDate = new Date(selectedDate);
                     newDate.setMonth(newDate.getMonth() + 1);

@@ -144,7 +144,7 @@ export default function App() {
   };
 
   const handleNavigateToAttendance = () => {
-    console.log("Navigating to Attendance Screen");
+    console.log(`[Navigation] Navigating to Attendance Screen - Current userRole: "${userRole}"`);
     setMode("attendance");
   };
 
@@ -271,11 +271,29 @@ export default function App() {
         return true; // Prevent default behavior
       } else {
         // On sub-screens, navigate back to appropriate dashboard
-        if (mode === 'attendance' || mode === 'addChild' || mode === 'manageUsers' || 
+        if (mode === 'attendance') {
+          // Navigate based on user role for attendance
+          if (userRole === 'admin') {
+            handleBackToAdminDashboard();
+          } else if (userRole === 'staff') {
+            handleBackToStaffDashboard();
+          } else {
+            handleBackToParentHome();
+          }
+        } else if (mode === 'manageUsers' || 
             mode === 'assignChildren' || mode === 'createAnnouncement' || 
             mode === 'manageEvents' || mode === 'manageMenu' || mode === 'viewOrders' || 
             mode === 'manageFees') {
           handleBackToAdminDashboard();
+        } else if (mode === 'addChild') {
+          // Navigate based on user role
+          if (userRole === 'admin') {
+            handleBackToAdminDashboard();
+          } else if (userRole === 'staff') {
+            handleBackToStaffDashboard();
+          } else {
+            handleBackToParentHome();
+          }
         } else if (mode === 'staffMyClass' || mode === 'staffAnnouncements') {
           handleBackToStaffDashboard();
         } else if (mode === 'parentChildren' || mode === 'announcements' || 
@@ -349,16 +367,26 @@ export default function App() {
           userId={userId}
           onLogout={handleLogout}
           onNavigateToAttendance={handleNavigateToAttendance}
+          onNavigateToAddChild={handleNavigateToAddChild}
           onNavigateToMyClass={handleNavigateToStaffMyClass}
           onNavigateToAnnouncements={handleNavigateToStaffAnnouncements}
         />
       ) : mode === "attendance" ? (
-        <AttendanceScreen onBack={() => {
+        <AttendanceScreen 
+          userId={userId}
+          onBack={() => {
+          console.log(`[Attendance] onBack called - userRole: "${userRole}", userId: "${userId}"`);
+          console.log(`[Attendance] userRole type: ${typeof userRole}, length: ${userRole?.length || 0}`);
+          console.log(`[Attendance] Checking conditions: admin=${userRole === "admin"}, staff=${userRole === "staff"}, parent=${userRole === "parent"}`);
+          
           if (userRole === "admin") {
+            console.log(`[Attendance] Navigating to Admin Dashboard`);
             handleBackToAdminDashboard();
           } else if (userRole === "staff") {
+            console.log(`[Attendance] Navigating to Staff Dashboard`);
             handleBackToStaffDashboard();
           } else {
+            console.log(`[Attendance] Navigating to Parent Home`);
             handleBackToParentHome();
           }
         }} />
@@ -367,20 +395,34 @@ export default function App() {
           userRole={userRole}
           userId={userId}
           onBack={() => {
+            console.log(`[AddChild] onBack called - userRole: "${userRole}", userId: "${userId}"`);
+            console.log(`[AddChild] userRole type: ${typeof userRole}, length: ${userRole?.length || 0}`);
+            console.log(`[AddChild] Checking conditions: admin=${userRole === "admin"}, staff=${userRole === "staff"}, parent=${userRole === "parent"}`);
+            
             if (userRole === "admin") {
+              console.log(`[AddChild] Navigating to Admin Dashboard`);
               handleBackToAdminDashboard();
             } else if (userRole === "staff") {
+              console.log(`[AddChild] Navigating to Staff Dashboard`);
               handleBackToStaffDashboard();
             } else {
+              console.log(`[AddChild] Navigating to Parent Home`);
               handleBackToParentHome();
             }
           }}
           onSuccess={() => {
+            console.log(`[AddChild] onSuccess called - userRole: "${userRole}", userId: "${userId}"`);
+            console.log(`[AddChild] userRole type: ${typeof userRole}, length: ${userRole?.length || 0}`);
+            console.log(`[AddChild] Checking conditions: admin=${userRole === "admin"}, staff=${userRole === "staff"}, parent=${userRole === "parent"}`);
+            
             if (userRole === "admin") {
+              console.log(`[AddChild] Navigating to Admin Dashboard`);
               handleBackToAdminDashboard();
             } else if (userRole === "staff") {
+              console.log(`[AddChild] Navigating to Staff Dashboard`);
               handleBackToStaffDashboard();
             } else {
+              console.log(`[AddChild] Navigating to Parent Home`);
               handleBackToParentHome();
             }
           }}

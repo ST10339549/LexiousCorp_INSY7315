@@ -18,7 +18,7 @@ import {
   Divider,
 } from "native-base";
 import { BackHandler } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { fetchAllChildren, Child } from "../services/children";
 import { fetchAllUsers, User } from "../services/users";
 import {
@@ -27,6 +27,7 @@ import {
   getAllAssignments,
   Assignment,
 } from "../services/assignments";
+import { AppCard } from "../components/shared";
 
 type AssignChildrenScreenProps = {
   currentAdminId: string;
@@ -235,21 +236,21 @@ export default function AssignChildrenScreen({
 
     return (
       <Box key={child.id} mb={3}>
-        <Box bg="coolGray.800" rounded="xl" p={4} shadow={2}>
+        <AppCard>
           <VStack space={3}>
             {/* Child Info */}
             <HStack justifyContent="space-between" alignItems="center">
               <VStack flex={1} mr={3}>
-                <Heading color="white" size="md">
+                <Heading color="gray.800" size="md">
                   {child.name}
                 </Heading>
-                <Text color="coolGray.400" fontSize="sm">
+                <Text color="gray.600" fontSize="sm">
                   DOB: {new Date(child.dateOfBirth).toLocaleDateString()}
                 </Text>
                 {child.allergies && child.allergies.length > 0 && (
                   <HStack space={1} flexWrap="wrap" mt={1}>
-                    <Icon as={MaterialIcons} name="warning" size="xs" color="red.400" />
-                    <Text color="red.400" fontSize="xs">
+                    <Icon as={Ionicons} name="warning" size="xs" color="red.500" />
+                    <Text color="red.500" fontSize="xs">
                       {child.allergies.join(", ")}
                     </Text>
                   </HStack>
@@ -258,13 +259,13 @@ export default function AssignChildrenScreen({
 
               {/* Assignment Status Badge */}
               {assignedStaffId ? (
-                <Badge bg="green.500" rounded="full" px={3} py={1}>
+                <Badge bg="success.500" rounded="full" px={3} py={1}>
                   <Text color="white" fontSize="xs" fontWeight="600">
                     ASSIGNED
                   </Text>
                 </Badge>
               ) : (
-                <Badge bg="orange.500" rounded="full" px={3} py={1}>
+                <Badge bg="warning.500" rounded="full" px={3} py={1}>
                   <Text color="white" fontSize="xs" fontWeight="600">
                     UNASSIGNED
                   </Text>
@@ -274,7 +275,7 @@ export default function AssignChildrenScreen({
 
             {/* Staff Assignment Selector */}
             <VStack space={2}>
-              <Text color="coolGray.300" fontSize="sm" fontWeight="500">
+              <Text color="gray.700" fontSize="sm" fontWeight="500">
                 Assigned Teacher:
               </Text>
               <HStack space={2} alignItems="center">
@@ -284,17 +285,17 @@ export default function AssignChildrenScreen({
                     minWidth="100%"
                     placeholder="Select a teacher..."
                     onValueChange={(value) => handleAssignmentChange(child, value)}
-                    bg="coolGray.700"
-                    color="white"
-                    borderColor="coolGray.600"
+                    bg="white"
+                    color="gray.800"
+                    borderColor="gray.300"
                     rounded="lg"
                     isDisabled={isUpdating}
                     _selectedItem={{
-                      bg: "brand.500",
-                      endIcon: <CheckIcon size="5" color="white" />,
+                      bg: "primary.100",
+                      endIcon: <CheckIcon size="5" color="primary.600" />,
                     }}
                     _actionSheetContent={{
-                      bg: "coolGray.800",
+                      bg: "white",
                     }}
                   >
                     <Select.Item label="Unassigned" value="" />
@@ -314,46 +315,45 @@ export default function AssignChildrenScreen({
               {/* Show current assignment */}
               {assignedStaffId && (
                 <HStack space={2} alignItems="center">
-                  <Icon as={MaterialIcons} name="person" size="sm" color="green.400" />
-                  <Text color="green.400" fontSize="sm">
+                  <Icon as={Ionicons} name="person" size="sm" color="success.500" />
+                  <Text color="success.600" fontSize="sm">
                     Currently assigned to: {getStaffName(assignedStaffId)}
                   </Text>
                 </HStack>
               )}
             </VStack>
           </VStack>
-        </Box>
-        <Divider bg="coolGray.700" my={2} />
+        </AppCard>
       </Box>
     );
   };
 
   return (
-    <Box flex={1} bg="coolGray.900" safeArea>
+    <Box flex={1} bg="#F7F9FC" safeArea>
       {/* Header */}
-      <Box bg="coolGray.800" px={6} py={4} shadow={3}>
+      <Box bg="white" px={6} py={4} shadow={2} borderBottomWidth={1} borderBottomColor="gray.200">
         <VStack space={2}>
           <HStack alignItems="center" space={3}>
             {onBack && (
               <IconButton
                 icon={
-                  <Icon as={MaterialIcons} name="arrow-back" size="lg" color="white" />
+                  <Icon as={Ionicons} name="arrow-back" size="lg" color="gray.800" />
                 }
                 onPress={onBack}
                 variant="ghost"
-                _pressed={{ bg: "coolGray.700" }}
+                _pressed={{ bg: "gray.100" }}
               />
             )}
-            <Heading color="white" size="xl" flex={1}>
+            <Heading color="gray.800" size="xl" flex={1}>
               Assign Children to Teachers
             </Heading>
           </HStack>
           <HStack justifyContent="space-between" alignItems="center">
             <VStack>
-              <Text color="coolGray.400" fontSize="sm">
+              <Text color="gray.600" fontSize="sm">
                 {children.length} Total Children
               </Text>
-              <Text color="coolGray.400" fontSize="sm">
+              <Text color="gray.600" fontSize="sm">
                 {staffMembers.length} Available Teachers
               </Text>
             </VStack>
@@ -376,8 +376,8 @@ export default function AssignChildrenScreen({
       {/* Content */}
       {loading ? (
         <Box flex={1} justifyContent="center" alignItems="center">
-          <Spinner size="lg" color="brand.500" />
-          <Text color="coolGray.400" mt={4} fontSize="md">
+          <Spinner size="lg" color="primary.400" />
+          <Text color="gray.600" mt={4} fontSize="md">
             Loading children and teachers...
           </Text>
         </Box>
@@ -385,26 +385,26 @@ export default function AssignChildrenScreen({
         <ScrollView flex={1} px={6} py={4}>
           {/* No staff warning */}
           {staffMembers.length === 0 && (
-            <Box bg="orange.900" p={4} rounded="xl" borderWidth={1} borderColor="orange.600" mb={4}>
+            <AppCard bg="warning.50" borderWidth={1} borderColor="warning.300" mb={4}>
               <HStack space={2} alignItems="center">
-                <Icon as={MaterialIcons} name="warning" size="md" color="orange.400" />
+                <Icon as={Ionicons} name="warning" size="md" color="warning.600" />
                 <VStack flex={1}>
-                  <Text color="orange.200" fontSize="md" fontWeight="600">
+                  <Text color="warning.800" fontSize="md" fontWeight="600">
                     No Teachers Available
                   </Text>
-                  <Text color="orange.300" fontSize="sm">
+                  <Text color="warning.700" fontSize="sm">
                     Please create staff accounts first in "Manage Users"
                   </Text>
                 </VStack>
               </HStack>
-            </Box>
+            </AppCard>
           )}
 
           {/* Children list */}
           {children.length === 0 ? (
             <Box mt={10} alignItems="center">
-              <Icon as={MaterialIcons} name="child-care" size="4xl" color="coolGray.600" />
-              <Text color="coolGray.500" fontSize="lg" mt={4} textAlign="center">
+              <Icon as={Ionicons} name="people-outline" size={16} color="gray.300" />
+              <Text color="gray.500" fontSize="lg" mt={4} textAlign="center">
                 No children registered yet
               </Text>
             </Box>

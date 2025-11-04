@@ -14,7 +14,7 @@ import {
   Badge,
   Modal,
 } from 'native-base';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { listReceipts, Receipt } from '../services/payments';
 
 type ReceiptsScreenProps = {
@@ -142,11 +142,11 @@ export default function ReceiptsScreen({
     return (
       <Box key={receipt.id} mb={3}>
         <Box
-          bg="coolGray.800"
+          bg="white"
           rounded="xl"
           p={4}
           borderWidth={1}
-          borderColor="coolGray.700"
+          borderColor="gray.200"
           onTouchEnd={() => openReceiptDetail(receipt)}
         >
           <VStack space={3}>
@@ -155,16 +155,16 @@ export default function ReceiptsScreen({
               <VStack flex={1} space={1}>
                 <HStack space={2} alignItems="center">
                   <Icon
-                    as={MaterialIcons}
+                    as={Ionicons}
                     name="receipt"
                     size="sm"
                     color="brand.400"
                   />
-                  <Text color="coolGray.400" fontSize="xs" fontWeight="600">
+                  <Text color="gray.600" fontSize="xs" fontWeight="600">
                     Receipt #{receipt.id.substring(0, 8)}
                   </Text>
                 </HStack>
-                <Text color="white" fontSize="lg" fontWeight="bold">
+                <Text color="gray.800" fontSize="lg" fontWeight="bold">
                   R{receipt.amount.toFixed(2)}
                 </Text>
               </VStack>
@@ -176,35 +176,35 @@ export default function ReceiptsScreen({
               >
                 <HStack space={1} alignItems="center">
                   <Icon
-                    as={MaterialIcons}
+                    as={Ionicons}
                     name={getStatusIcon(receipt.status)}
-                    color="white"
+                    color="gray.800"
                     size="xs"
                   />
-                  <Text color="white" fontSize="xs" fontWeight="600">
+                  <Text color="gray.800" fontSize="xs" fontWeight="600">
                     {receipt.status.toUpperCase()}
                   </Text>
                 </HStack>
               </Badge>
             </HStack>
 
-            <Divider bg="coolGray.700" />
+            <Divider bg="gray.100" />
 
             {/* Details Row */}
             <HStack justifyContent="space-between" alignItems="center">
               <VStack space={0.5}>
-                <Text color="coolGray.500" fontSize="xs">
+                <Text color="gray.500" fontSize="xs">
                   Payment Date
                 </Text>
-                <Text color="coolGray.300" fontSize="sm" fontWeight="500">
+                <Text color="gray.700" fontSize="sm" fontWeight="500">
                   {formatShortDate(receipt.createdAt)}
                 </Text>
               </VStack>
               <VStack space={0.5} alignItems="flex-end">
-                <Text color="coolGray.500" fontSize="xs">
+                <Text color="gray.500" fontSize="xs">
                   Items Paid
                 </Text>
-                <Text color="coolGray.300" fontSize="sm" fontWeight="500">
+                <Text color="gray.700" fontSize="sm" fontWeight="500">
                   {receipt.orderIds.length} item{receipt.orderIds.length !== 1 ? 's' : ''}
                 </Text>
               </VStack>
@@ -213,12 +213,12 @@ export default function ReceiptsScreen({
             {/* Transaction ID */}
             <HStack space={2} alignItems="center">
               <Icon
-                as={MaterialIcons}
-                name="confirmation-number"
+                as={Ionicons}
+                name="receipt-outline"
                 size="xs"
-                color="coolGray.500"
+                color="gray.500"
               />
-              <Text color="coolGray.500" fontSize="xs" numberOfLines={1} flex={1}>
+              <Text color="gray.500" fontSize="xs" numberOfLines={1} flex={1}>
                 Txn: {receipt.txnId}
               </Text>
             </HStack>
@@ -226,17 +226,17 @@ export default function ReceiptsScreen({
             {/* View Details Button */}
             <Button
               variant="outline"
-              borderColor="brand.500"
+              borderColor="primary.400"
               size="sm"
               onPress={() => openReceiptDetail(receipt)}
-              _pressed={{ bg: 'brand.900' }}
+              _pressed={{ bg: 'primary.900' }}
             >
               <HStack space={2} alignItems="center">
-                <Text color="brand.400" fontSize="xs" fontWeight="600">
+                <Text color="primary.400" fontSize="xs" fontWeight="600">
                   View Details
                 </Text>
                 <Icon
-                  as={MaterialIcons}
+                  as={Ionicons}
                   name="arrow-forward"
                   color="brand.400"
                   size="xs"
@@ -257,17 +257,17 @@ export default function ReceiptsScreen({
 
     return (
       <Modal isOpen={showDetailModal} onClose={closeReceiptDetail} size="lg">
-        <Modal.Content bg="coolGray.800" maxWidth="500px">
+        <Modal.Content bg="white" maxWidth="500px">
           <Modal.CloseButton />
-          <Modal.Header bg="coolGray.800" borderBottomWidth={0}>
+          <Modal.Header bg="white" borderBottomWidth={0}>
             <HStack space={2} alignItems="center">
               <Icon
-                as={MaterialIcons}
-                name="receipt-long"
-                color="brand.400"
+                as={Ionicons}
+                name="receipt-outline"
+                color="primary.400"
                 size="md"
               />
-              <Text color="white" fontSize="lg" fontWeight="bold">
+              <Text color="gray.800" fontSize="lg" fontWeight="bold">
                 Receipt Details
               </Text>
             </HStack>
@@ -276,12 +276,12 @@ export default function ReceiptsScreen({
           <Modal.Body>
             <VStack space={4}>
               {/* Receipt ID */}
-              <Box bg="coolGray.900" p={4} rounded="lg">
+              <Box bg="#F7F9FC" p={4} rounded="lg">
                 <VStack space={2}>
-                  <Text color="coolGray.500" fontSize="xs" fontWeight="600">
+                  <Text color="gray.500" fontSize="xs" fontWeight="600">
                     RECEIPT ID
                   </Text>
-                  <Text color="white" fontSize="md" fontWeight="600">
+                  <Text color="gray.800" fontSize="md" fontWeight="600">
                     {selectedReceipt.id}
                   </Text>
                 </VStack>
@@ -289,9 +289,9 @@ export default function ReceiptsScreen({
 
               {/* Amount & Status */}
               <HStack space={3}>
-                <Box bg="coolGray.900" p={4} rounded="lg" flex={1}>
+                <Box bg="#F7F9FC" p={4} rounded="lg" flex={1}>
                   <VStack space={2}>
-                    <Text color="coolGray.500" fontSize="xs" fontWeight="600">
+                    <Text color="gray.500" fontSize="xs" fontWeight="600">
                       AMOUNT
                     </Text>
                     <Text color="brand.400" fontSize="2xl" fontWeight="bold">
@@ -299,9 +299,9 @@ export default function ReceiptsScreen({
                     </Text>
                   </VStack>
                 </Box>
-                <Box bg="coolGray.900" p={4} rounded="lg" flex={1}>
+                <Box bg="#F7F9FC" p={4} rounded="lg" flex={1}>
                   <VStack space={2}>
-                    <Text color="coolGray.500" fontSize="xs" fontWeight="600">
+                    <Text color="gray.500" fontSize="xs" fontWeight="600">
                       STATUS
                     </Text>
                     <Badge
@@ -313,12 +313,12 @@ export default function ReceiptsScreen({
                     >
                       <HStack space={1} alignItems="center">
                         <Icon
-                          as={MaterialIcons}
+                          as={Ionicons}
                           name={getStatusIcon(selectedReceipt.status)}
-                          color="white"
+                          color="gray.800"
                           size="xs"
                         />
-                        <Text color="white" fontSize="xs" fontWeight="600">
+                        <Text color="gray.800" fontSize="xs" fontWeight="600">
                           {selectedReceipt.status.toUpperCase()}
                         </Text>
                       </HStack>
@@ -328,36 +328,36 @@ export default function ReceiptsScreen({
               </HStack>
 
               {/* Payment Details */}
-              <Box bg="coolGray.900" p={4} rounded="lg">
+              <Box bg="#F7F9FC" p={4} rounded="lg">
                 <VStack space={3}>
-                  <Text color="white" fontSize="sm" fontWeight="bold">
+                  <Text color="gray.800" fontSize="sm" fontWeight="bold">
                     Payment Information
                   </Text>
-                  <Divider bg="coolGray.700" />
+                  <Divider bg="gray.100" />
                   
                   <HStack justifyContent="space-between">
-                    <Text color="coolGray.400" fontSize="sm">
+                    <Text color="gray.600" fontSize="sm">
                       Date & Time
                     </Text>
-                    <Text color="white" fontSize="sm" fontWeight="500">
+                    <Text color="gray.800" fontSize="sm" fontWeight="500">
                       {formatDate(selectedReceipt.createdAt)}
                     </Text>
                   </HStack>
 
                   <HStack justifyContent="space-between">
-                    <Text color="coolGray.400" fontSize="sm">
+                    <Text color="gray.600" fontSize="sm">
                       Payment Method
                     </Text>
-                    <Text color="white" fontSize="sm" fontWeight="500">
+                    <Text color="gray.800" fontSize="sm" fontWeight="500">
                       {selectedReceipt.paymentMethod || 'Card'}
                     </Text>
                   </HStack>
 
                   <HStack justifyContent="space-between">
-                    <Text color="coolGray.400" fontSize="sm">
+                    <Text color="gray.600" fontSize="sm">
                       Items Paid
                     </Text>
-                    <Text color="white" fontSize="sm" fontWeight="500">
+                    <Text color="gray.800" fontSize="sm" fontWeight="500">
                       {selectedReceipt.orderIds.length}
                     </Text>
                   </HStack>
@@ -365,12 +365,12 @@ export default function ReceiptsScreen({
               </Box>
 
               {/* Transaction ID */}
-              <Box bg="coolGray.900" p={4} rounded="lg">
+              <Box bg="#F7F9FC" p={4} rounded="lg">
                 <VStack space={2}>
-                  <Text color="coolGray.500" fontSize="xs" fontWeight="600">
+                  <Text color="gray.500" fontSize="xs" fontWeight="600">
                     TRANSACTION ID
                   </Text>
-                  <Text color="coolGray.300" fontSize="sm" fontFamily="mono">
+                  <Text color="gray.700" fontSize="sm" fontFamily="mono">
                     {selectedReceipt.txnId}
                   </Text>
                 </VStack>
@@ -378,22 +378,22 @@ export default function ReceiptsScreen({
 
               {/* Order IDs */}
               {selectedReceipt.orderIds.length > 0 && (
-                <Box bg="coolGray.900" p={4} rounded="lg">
+                <Box bg="#F7F9FC" p={4} rounded="lg">
                   <VStack space={2}>
-                    <Text color="white" fontSize="sm" fontWeight="bold">
+                    <Text color="gray.800" fontSize="sm" fontWeight="bold">
                       Paid Items ({selectedReceipt.orderIds.length})
                     </Text>
-                    <Divider bg="coolGray.700" />
+                    <Divider bg="gray.100" />
                     <VStack space={1}>
                       {selectedReceipt.orderIds.map((orderId, index) => (
                         <HStack key={index} space={2} alignItems="center">
                           <Icon
-                            as={MaterialIcons}
-                            name="check-circle"
+                            as={Ionicons}
+                            name="checkmark-circle"
                             color="green.500"
                             size="xs"
                           />
-                          <Text color="coolGray.400" fontSize="xs" flex={1} numberOfLines={1}>
+                          <Text color="gray.600" fontSize="xs" flex={1} numberOfLines={1}>
                             {orderId}
                           </Text>
                         </HStack>
@@ -406,7 +406,7 @@ export default function ReceiptsScreen({
               {/* Info Notice */}
               <Box bg="blue.900" p={3} rounded="lg" borderWidth={1} borderColor="blue.600">
                 <HStack space={2} alignItems="center">
-                  <Icon as={MaterialIcons} name="info" color="blue.400" size="sm" />
+                  <Icon as={Ionicons} name="info" color="blue.400" size="sm" />
                   <Text color="blue.200" fontSize="xs" flex={1}>
                     Keep this receipt for your records. This is a mock payment for demonstration purposes.
                   </Text>
@@ -415,14 +415,14 @@ export default function ReceiptsScreen({
             </VStack>
           </Modal.Body>
 
-          <Modal.Footer bg="coolGray.800" borderTopWidth={0}>
+          <Modal.Footer bg="white" borderTopWidth={0}>
             <Button
               flex={1}
-              bg="brand.500"
+              bg="primary.400"
               onPress={closeReceiptDetail}
-              _pressed={{ bg: 'brand.600' }}
+              _pressed={{ bg: 'primary.500' }}
             >
-              <Text color="white" fontWeight="600">
+              <Text color="gray.800" fontWeight="600">
                 Close
               </Text>
             </Button>
@@ -438,7 +438,7 @@ export default function ReceiptsScreen({
       <HStack
         px={6}
         py={4}
-        bg="coolGray.800"
+        bg="white"
         alignItems="center"
         space={3}
         borderBottomWidth={1}
@@ -447,14 +447,14 @@ export default function ReceiptsScreen({
         <Button
           variant="ghost"
           onPress={onNavigateBack}
-          leftIcon={<Icon as={MaterialIcons} name="arrow-back" size="md" color="white" />}
+          leftIcon={<Icon as={Ionicons} name="arrow-back" size="md" color="gray.800" />}
           _pressed={{ bg: 'coolGray.700' }}
         >
-          <Text color="white" fontSize="md">
+          <Text color="gray.800" fontSize="md">
             Back
           </Text>
         </Button>
-        <Heading color="white" size="lg" flex={1}>
+        <Heading color="gray.800" size="lg" flex={1}>
           Receipts
         </Heading>
       </HStack>
@@ -462,14 +462,14 @@ export default function ReceiptsScreen({
       <ScrollView flex={1}>
         <VStack space={6} px={6} py={6}>
           {/* Info Banner */}
-          <Box bg="coolGray.800" p={4} rounded="xl" borderWidth={1} borderColor="coolGray.700">
+          <Box bg="white" p={4} rounded="xl" borderWidth={1} borderColor="gray.200">
             <HStack space={3} alignItems="center">
-              <Icon as={MaterialIcons} name="receipt-long" color="brand.400" size="lg" />
+              <Icon as={Ionicons} name="receipt-outline" color="primary.400" size="lg" />
               <VStack flex={1}>
-                <Text color="white" fontSize="md" fontWeight="600">
+                <Text color="gray.800" fontSize="md" fontWeight="600">
                   Payment History
                 </Text>
-                <Text color="coolGray.400" fontSize="sm">
+                <Text color="gray.600" fontSize="sm">
                   View all your payment receipts
                 </Text>
               </VStack>
@@ -479,31 +479,31 @@ export default function ReceiptsScreen({
           {/* Loading State */}
           {loading ? (
             <Box py={10} alignItems="center">
-              <Spinner size="lg" color="brand.500" />
-              <Text color="coolGray.400" mt={4} fontSize="md">
+              <Spinner size="lg" color="primary.400" />
+              <Text color="gray.600" mt={4} fontSize="md">
                 Loading receipts...
               </Text>
             </Box>
           ) : receipts.length === 0 ? (
             /* No Receipts */
             <Box
-              bg="coolGray.800"
+              bg="white"
               p={8}
               rounded="xl"
               borderWidth={1}
-              borderColor="coolGray.700"
+              borderColor="gray.200"
               alignItems="center"
             >
               <Icon
-                as={MaterialIcons}
-                name="receipt-long"
+                as={Ionicons}
+                name="receipt-outline"
                 size="4xl"
-                color="coolGray.600"
+                color="gray.600"
               />
-              <Text color="white" fontSize="lg" fontWeight="600" mt={4}>
+              <Text color="gray.800" fontSize="lg" fontWeight="600" mt={4}>
                 No Receipts Yet
               </Text>
-              <Text color="coolGray.400" fontSize="sm" mt={2} textAlign="center">
+              <Text color="gray.600" fontSize="sm" mt={2} textAlign="center">
                 Your payment receipts will appear here after you make a payment
               </Text>
             </Box>
@@ -511,11 +511,11 @@ export default function ReceiptsScreen({
             /* Receipt List */
             <>
               <HStack justifyContent="space-between" alignItems="center">
-                <Text color="coolGray.400" fontSize="sm">
+                <Text color="gray.600" fontSize="sm">
                   {receipts.length} receipt{receipts.length !== 1 ? 's' : ''} found
                 </Text>
-                <Badge bg="brand.600" rounded="full" px={3} py={1}>
-                  <Text color="white" fontSize="xs" fontWeight="600">
+                <Badge bg="primary.500" rounded="full" px={3} py={1}>
+                  <Text color="gray.800" fontSize="xs" fontWeight="600">
                     Total: R{receipts.reduce((sum, r) => sum + r.amount, 0).toFixed(2)}
                   </Text>
                 </Badge>

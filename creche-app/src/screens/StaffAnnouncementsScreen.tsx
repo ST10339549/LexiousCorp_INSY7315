@@ -118,7 +118,7 @@ export default function StaffAnnouncementsScreen({
   };
 
   return (
-    <Box bg="coolGray.50" flex={1} safeArea>
+    <Box bg="#F7F9FC" flex={1} safeArea>
       {/* Header */}
       <HStack
         bg="white"
@@ -127,7 +127,7 @@ export default function StaffAnnouncementsScreen({
         justifyContent="space-between"
         alignItems="center"
         borderBottomWidth={1}
-        borderBottomColor="coolGray.200"
+        borderBottomColor="gray.200"
       >
         <Heading size="lg" color="primary.700">
           📢 Announcements
@@ -177,7 +177,7 @@ export default function StaffAnnouncementsScreen({
                 borderRadius="lg"
                 shadow={1}
                 borderWidth={1}
-                borderColor="coolGray.200"
+                borderColor="gray.200"
               >
                 <VStack space={2}>
                   {/* Header with badge */}
