@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { BackHandler, Alert } from 'react-native';
 import {
-  View,
+  Box,
+  VStack,
+  HStack,
   Text,
-  StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
+  Button,
+  Spinner,
   Modal,
-  BackHandler,
-  SafeAreaView,
-} from 'react-native';
+  Pressable,
+} from 'native-base';
+import { Ionicons } from '@expo/vector-icons';
 import {
   listOrdersByAdmin,
   updateOrderStatus,
@@ -65,16 +66,6 @@ export default function OrdersAdminScreen({ onNavigateBack }: OrdersAdminScreenP
     } finally {
       setLoading(false);
     }
-  };
-
-  const changeWeek = (offset: number) => {
-    if (!selectedWeek) {
-      setSelectedWeek(getCurrentWeekMonday());
-      return;
-    }
-    const currentDate = new Date(selectedWeek);
-    currentDate.setDate(currentDate.getDate() + (offset * 7));
-    setSelectedWeek(getMondayOfWeek(currentDate));
   };
 
   const handleUpdateStatus = async (
@@ -140,479 +131,310 @@ export default function OrdersAdminScreen({ onNavigateBack }: OrdersAdminScreenP
     return formatWeekString(selectedWeek);
   };
 
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'paid': return { bg: 'success.100', color: 'success.800' };
+      case 'pending': return { bg: 'warning.100', color: 'warning.800' };
+      case 'cancelled': return { bg: 'danger.100', color: 'danger.800' };
+      default: return { bg: 'gray.100', color: 'gray.800' };
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <Box flex={1} bg="#F7F9FC" safeArea>
       {/* Week Picker Modal */}
-      <Modal
-        visible={showWeekPicker}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowWeekPicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Week</Text>
-            <ScrollView>
-              <TouchableOpacity
-                style={[
-                  styles.option,
-                  selectedWeek === undefined && styles.optionSelected,
-                ]}
-                onPress={() => {
-                  setSelectedWeek(undefined);
-                  setShowWeekPicker(false);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    selectedWeek === undefined && styles.optionTextSelected,
-                  ]}
-                >
-                  All Weeks
-                </Text>
-              </TouchableOpacity>
-              {getWeekOptions().map((week) => (
-                <TouchableOpacity
-                  key={week}
-                  style={[
-                    styles.option,
-                    selectedWeek === week && styles.optionSelected,
-                  ]}
+      <Modal isOpen={showWeekPicker} onClose={() => setShowWeekPicker(false)}>
+        <Modal.Content maxWidth="400px" bg="white">
+          <Modal.CloseButton />
+          <Modal.Header bg="white" borderBottomWidth={1} borderBottomColor="gray.200">
+            <Text fontSize="lg" fontWeight="bold" color="gray.800">Select Week</Text>
+          </Modal.Header>
+          <Modal.Body bg="white">
+            <ScrollView maxH="400px">
+              <VStack space={2}>
+                <Pressable
+                  bg={selectedWeek === undefined ? 'primary.50' : 'white'}
+                  borderWidth={selectedWeek === undefined ? 2 : 1}
+                  borderColor={selectedWeek === undefined ? 'primary.400' : 'gray.200'}
+                  borderRadius="md"
+                  p={4}
                   onPress={() => {
-                    setSelectedWeek(week);
+                    setSelectedWeek(undefined);
                     setShowWeekPicker(false);
                   }}
                 >
                   <Text
-                    style={[
-                      styles.optionText,
-                      selectedWeek === week && styles.optionTextSelected,
-                    ]}
+                    fontSize="md"
+                    fontWeight={selectedWeek === undefined ? 'bold' : 'normal'}
+                    color={selectedWeek === undefined ? 'primary.600' : 'gray.800'}
                   >
-                    {formatWeekString(week)}
+                    All Weeks
                   </Text>
-                </TouchableOpacity>
-              ))}
+                </Pressable>
+                {getWeekOptions().map((week) => (
+                  <Pressable
+                    key={week}
+                    bg={selectedWeek === week ? 'primary.50' : 'white'}
+                    borderWidth={selectedWeek === week ? 2 : 1}
+                    borderColor={selectedWeek === week ? 'primary.400' : 'gray.200'}
+                    borderRadius="md"
+                    p={4}
+                    onPress={() => {
+                      setSelectedWeek(week);
+                      setShowWeekPicker(false);
+                    }}
+                  >
+                    <Text
+                      fontSize="md"
+                      fontWeight={selectedWeek === week ? 'bold' : 'normal'}
+                      color={selectedWeek === week ? 'primary.600' : 'gray.800'}
+                    >
+                      {formatWeekString(week)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </VStack>
             </ScrollView>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setShowWeekPicker(false)}
-            >
-              <Text style={styles.modalCloseButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          </Modal.Body>
+          <Modal.Footer bg="white" borderTopWidth={1} borderTopColor="gray.200">
+            <Button variant="ghost" onPress={() => setShowWeekPicker(false)}>
+              <Text color="gray.600" fontWeight="semibold">Close</Text>
+            </Button>
+          </Modal.Footer>
+        </Modal.Content>
       </Modal>
 
       {/* Status Picker Modal */}
-      <Modal
-        visible={showStatusPicker}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowStatusPicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Status</Text>
-            <TouchableOpacity
-              style={[
-                styles.option,
-                selectedStatus === undefined && styles.optionSelected,
-              ]}
-              onPress={() => {
-                setSelectedStatus(undefined);
-                setShowStatusPicker(false);
-              }}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  selectedStatus === undefined && styles.optionTextSelected,
-                ]}
-              >
-                All Statuses
-              </Text>
-            </TouchableOpacity>
-            {(['pending', 'paid', 'cancelled'] as const).map((status) => (
-              <TouchableOpacity
-                key={status}
-                style={[
-                  styles.option,
-                  selectedStatus === status && styles.optionSelected,
-                ]}
+      <Modal isOpen={showStatusPicker} onClose={() => setShowStatusPicker(false)}>
+        <Modal.Content maxWidth="400px" bg="white">
+          <Modal.CloseButton />
+          <Modal.Header bg="white" borderBottomWidth={1} borderBottomColor="gray.200">
+            <Text fontSize="lg" fontWeight="bold" color="gray.800">Select Status</Text>
+          </Modal.Header>
+          <Modal.Body bg="white">
+            <VStack space={2}>
+              <Pressable
+                bg={selectedStatus === undefined ? 'primary.50' : 'white'}
+                borderWidth={selectedStatus === undefined ? 2 : 1}
+                borderColor={selectedStatus === undefined ? 'primary.400' : 'gray.200'}
+                borderRadius="md"
+                p={4}
                 onPress={() => {
-                  setSelectedStatus(status);
+                  setSelectedStatus(undefined);
                   setShowStatusPicker(false);
                 }}
               >
                 <Text
-                  style={[
-                    styles.optionText,
-                    selectedStatus === status && styles.optionTextSelected,
-                  ]}
+                  fontSize="md"
+                  fontWeight={selectedStatus === undefined ? 'bold' : 'normal'}
+                  color={selectedStatus === undefined ? 'primary.600' : 'gray.800'}
                 >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                  All Statuses
                 </Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setShowStatusPicker(false)}
-            >
-              <Text style={styles.modalCloseButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+              </Pressable>
+              {(['pending', 'paid', 'cancelled'] as const).map((status) => (
+                <Pressable
+                  key={status}
+                  bg={selectedStatus === status ? 'primary.50' : 'white'}
+                  borderWidth={selectedStatus === status ? 2 : 1}
+                  borderColor={selectedStatus === status ? 'primary.400' : 'gray.200'}
+                  borderRadius="md"
+                  p={4}
+                  onPress={() => {
+                    setSelectedStatus(status);
+                    setShowStatusPicker(false);
+                  }}
+                >
+                  <Text
+                    fontSize="md"
+                    fontWeight={selectedStatus === status ? 'bold' : 'normal'}
+                    color={selectedStatus === status ? 'primary.600' : 'gray.800'}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </Text>
+                </Pressable>
+              ))}
+            </VStack>
+          </Modal.Body>
+          <Modal.Footer bg="white" borderTopWidth={1} borderTopColor="gray.200">
+            <Button variant="ghost" onPress={() => setShowStatusPicker(false)}>
+              <Text color="gray.600" fontWeight="semibold">Close</Text>
+            </Button>
+          </Modal.Footer>
+        </Modal.Content>
       </Modal>
 
-      <View style={styles.header}>
-        <Text style={styles.title}>Lunch Orders</Text>
-      </View>
+      {/* Header */}
+      <Box bg="white" px={5} py={4} borderBottomWidth={1} borderBottomColor="gray.200">
+        <Text fontSize="2xl" fontWeight="bold" color="gray.800" textAlign="center">
+          Lunch Orders
+        </Text>
+      </Box>
 
-      <View style={styles.filters}>
-        <TouchableOpacity
-          style={styles.filterButton}
+      {/* Filters */}
+      <HStack bg="white" px={3} py={3} space={2} borderBottomWidth={1} borderBottomColor="gray.200">
+        <Pressable
+          flex={1}
+          bg="gray.50"
+          borderWidth={1}
+          borderColor="gray.300"
+          borderRadius="md"
+          p={3}
           onPress={() => setShowWeekPicker(true)}
         >
-          <Text style={styles.filterLabel}>Week:</Text>
-          <Text style={styles.filterValue}>{getWeekLabel()}</Text>
-        </TouchableOpacity>
+          <Text fontSize="xs" color="gray.600" fontWeight="medium" mb={1}>
+            WEEK:
+          </Text>
+          <Text fontSize="sm" fontWeight="bold" color="primary.600">
+            {getWeekLabel()}
+          </Text>
+        </Pressable>
 
-        <TouchableOpacity
-          style={styles.filterButton}
+        <Pressable
+          flex={1}
+          bg="gray.50"
+          borderWidth={1}
+          borderColor="gray.300"
+          borderRadius="md"
+          p={3}
           onPress={() => setShowStatusPicker(true)}
         >
-          <Text style={styles.filterLabel}>Status:</Text>
-          <Text style={styles.filterValue}>{getStatusLabel()}</Text>
-        </TouchableOpacity>
-      </View>
+          <Text fontSize="xs" color="gray.600" fontWeight="medium" mb={1}>
+            STATUS:
+          </Text>
+          <Text fontSize="sm" fontWeight="bold" color="primary.600">
+            {getStatusLabel()}
+          </Text>
+        </Pressable>
+      </HStack>
 
-      <View style={styles.stats}>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Total Orders</Text>
-          <Text style={styles.statValue}>{orders.length}</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Revenue (Paid)</Text>
-          <Text style={styles.statValue}>R{calculateTotalRevenue().toFixed(2)}</Text>
-        </View>
-      </View>
+      {/* Stats */}
+      <HStack bg="white" px={4} py={4} space={4} justifyContent="space-around" borderBottomWidth={1} borderBottomColor="gray.200">
+        <VStack alignItems="center" flex={1}>
+          <Text fontSize="xs" color="gray.600" fontWeight="medium" mb={1}>
+            Total Orders
+          </Text>
+          <Text fontSize="2xl" fontWeight="bold" color="primary.600">
+            {orders.length}
+          </Text>
+        </VStack>
+        <VStack alignItems="center" flex={1}>
+          <Text fontSize="xs" color="gray.600" fontWeight="medium" mb={1}>
+            Revenue (Paid)
+          </Text>
+          <Text fontSize="2xl" fontWeight="bold" color="primary.600">
+            R{calculateTotalRevenue().toFixed(2)}
+          </Text>
+        </VStack>
+      </HStack>
 
+      {/* Orders List */}
       {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
+        <Box flex={1} justifyContent="center" alignItems="center">
+          <Spinner size="lg" color="primary.400" />
+        </Box>
       ) : orders.length === 0 ? (
-        <View style={styles.centered}>
-          <Text style={styles.noOrdersText}>No orders found</Text>
-        </View>
+        <Box flex={1} justifyContent="center" alignItems="center">
+          <Text fontSize="md" color="gray.500">No orders found</Text>
+        </Box>
       ) : (
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {orders.map((order) => (
-            <View key={order.id} style={styles.orderCard}>
-              <View style={styles.orderHeader}>
-                <Text style={styles.orderWeek}>
-                  {formatWeekString(order.weekOf)}
-                </Text>
-                <Text
-                  style={[
-                    styles.orderStatus,
-                    order.status === 'paid' && styles.statusPaid,
-                    order.status === 'pending' && styles.statusPending,
-                    order.status === 'cancelled' && styles.statusCancelled,
-                  ]}
+        <ScrollView flex={1} bg="#F7F9FC">
+          <VStack space={3} px={3} py={3}>
+            {orders.map((order) => {
+              const statusColors = getStatusBadgeColor(order.status);
+              return (
+                <Box
+                  key={order.id}
+                  bg="white"
+                  borderRadius="lg"
+                  p={4}
+                  shadow={1}
+                  borderWidth={1}
+                  borderColor="gray.200"
                 >
-                  {order.status.toUpperCase()}
-                </Text>
-              </View>
-
-              <Text style={styles.orderChild}>Child: {getChildName(order.childId)}</Text>
-              <Text style={styles.orderTotal}>Total: R{order.total.toFixed(2)}</Text>
-              <Text style={styles.orderDate}>
-                Placed: {order.createdAt.toLocaleDateString()}
-              </Text>
-
-              <View style={styles.orderActions}>
-                {order.status === 'pending' && (
-                  <>
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.paidButton]}
-                      onPress={() => confirmStatusChange(order.id, 'paid')}
+                  {/* Order Header */}
+                  <HStack justifyContent="space-between" alignItems="center" mb={3}>
+                    <Text fontSize="md" fontWeight="bold" color="gray.800">
+                      {formatWeekString(order.weekOf)}
+                    </Text>
+                    <Box
+                      bg={statusColors.bg}
+                      px={3}
+                      py={1}
+                      borderRadius="md"
                     >
-                      <Text style={styles.actionButtonText}>Mark Paid</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.cancelButton]}
-                      onPress={() => confirmStatusChange(order.id, 'cancelled')}
-                    >
-                      <Text style={styles.actionButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
-                {order.status === 'paid' && (
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.refundButton]}
-                    onPress={() => confirmStatusChange(order.id, 'cancelled')}
-                  >
-                    <Text style={styles.actionButtonText}>Refund/Cancel</Text>
-                  </TouchableOpacity>
-                )}
-                {order.status === 'cancelled' && (
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.restoreButton]}
-                    onPress={() => confirmStatusChange(order.id, 'pending')}
-                  >
-                    <Text style={styles.actionButtonText}>Restore</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          ))}
+                      <Text fontSize="xs" fontWeight="semibold" color={statusColors.color}>
+                        {order.status.toUpperCase()}
+                      </Text>
+                    </Box>
+                  </HStack>
+
+                  {/* Order Details */}
+                  <VStack space={1} mb={3}>
+                    <Text fontSize="sm" color="gray.600">
+                      Child: {getChildName(order.childId)}
+                    </Text>
+                    <Text fontSize="md" fontWeight="semibold" color="primary.600">
+                      Total: R{order.total.toFixed(2)}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      Placed: {order.createdAt.toLocaleDateString()}
+                    </Text>
+                  </VStack>
+
+                  {/* Actions */}
+                  <HStack space={2} flexWrap="wrap">
+                    {order.status === 'pending' && (
+                      <>
+                        <Button
+                          size="sm"
+                          bg="success.500"
+                          _pressed={{ bg: 'success.600' }}
+                          onPress={() => confirmStatusChange(order.id, 'paid')}
+                          leftIcon={<Ionicons name="checkmark-circle-outline" size={16} color="white" />}
+                        >
+                          <Text color="white" fontWeight="semibold" fontSize="sm">Mark Paid</Text>
+                        </Button>
+                        <Button
+                          size="sm"
+                          bg="danger.500"
+                          _pressed={{ bg: 'danger.600' }}
+                          onPress={() => confirmStatusChange(order.id, 'cancelled')}
+                          leftIcon={<Ionicons name="close-circle-outline" size={16} color="white" />}
+                        >
+                          <Text color="white" fontWeight="semibold" fontSize="sm">Cancel</Text>
+                        </Button>
+                      </>
+                    )}
+                    {order.status === 'paid' && (
+                      <Button
+                        size="sm"
+                        bg="warning.500"
+                        _pressed={{ bg: 'warning.600' }}
+                        onPress={() => confirmStatusChange(order.id, 'cancelled')}
+                        leftIcon={<Ionicons name="return-up-back-outline" size={16} color="white" />}
+                      >
+                        <Text color="white" fontWeight="semibold" fontSize="sm">Refund/Cancel</Text>
+                      </Button>
+                    )}
+                    {order.status === 'cancelled' && (
+                      <Button
+                        size="sm"
+                        bg="primary.400"
+                        _pressed={{ bg: 'primary.500' }}
+                        onPress={() => confirmStatusChange(order.id, 'pending')}
+                        leftIcon={<Ionicons name="refresh-outline" size={16} color="white" />}
+                      >
+                        <Text color="white" fontWeight="semibold" fontSize="sm">Restore</Text>
+                      </Button>
+                    )}
+                  </HStack>
+                </Box>
+              );
+            })}
+          </VStack>
         </ScrollView>
       )}
-      </View>
-    </SafeAreaView>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#007AFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  filters: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  filterButton: {
-    flex: 1,
-    padding: 12,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#dee2e6',
-  },
-  filterLabel: {
-    fontSize: 11,
-    color: '#6c757d',
-    marginBottom: 3,
-    fontWeight: '500',
-    textTransform: 'uppercase',
-  },
-  filterValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#007AFF',
-  },
-  stats: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  statCard: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6c757d',
-    marginBottom: 4,
-    fontWeight: '500',
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  orderCard: {
-    backgroundColor: '#fff',
-    marginHorizontal: 12,
-    marginTop: 10,
-    marginBottom: 4,
-    padding: 16,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  orderWeek: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  orderStatus: {
-    fontSize: 12,
-    fontWeight: '600',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  statusPending: {
-    backgroundColor: '#FFF3CD',
-    color: '#856404',
-  },
-  statusPaid: {
-    backgroundColor: '#D4EDDA',
-    color: '#155724',
-  },
-  statusCancelled: {
-    backgroundColor: '#F8D7DA',
-    color: '#721C24',
-  },
-  orderChild: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  orderTotal: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#007AFF',
-    marginBottom: 4,
-  },
-  orderDate: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 10,
-  },
-  orderActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    gap: 10,
-  },
-  actionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 5,
-    marginRight: 10,
-  },
-  paidButton: {
-    backgroundColor: '#34C759',
-  },
-  cancelButton: {
-    backgroundColor: '#FF3B30',
-  },
-  refundButton: {
-    backgroundColor: '#FF9500',
-  },
-  restoreButton: {
-    backgroundColor: '#007AFF',
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  noOrdersText: {
-    fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    width: '85%',
-    maxHeight: '70%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-    color: '#333',
-  },
-  option: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
-    borderRadius: 6,
-    marginBottom: 4,
-  },
-  optionSelected: {
-    backgroundColor: '#007AFF15',
-    borderColor: '#007AFF',
-    borderWidth: 2,
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  optionTextSelected: {
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  modalCloseButton: {
-    marginTop: 16,
-    paddingVertical: 12,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalCloseButtonText: {
-    color: '#666',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

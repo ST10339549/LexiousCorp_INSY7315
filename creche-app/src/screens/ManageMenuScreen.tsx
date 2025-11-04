@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
+  Box,
+  VStack,
+  HStack,
   Text,
-  StyleSheet,
+  Button,
+  Input,
+  Heading,
   ScrollView,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  BackHandler,
-  SafeAreaView,
-} from 'react-native';
+  Spinner,
+  Divider,
+  IconButton,
+  FormControl,
+  Badge,
+} from 'native-base';
+import { BackHandler, Alert } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   createMenu,
   updateMenu,
@@ -33,7 +38,12 @@ interface MenuItemInput {
   allergens: string;
 }
 
-export default function ManageMenuScreen({ navigation }: any) {
+type ManageMenuScreenProps = {
+  navigation?: any;
+  onBack?: () => void;
+};
+
+export default function ManageMenuScreen({ navigation, onBack }: ManageMenuScreenProps) {
   const [selectedWeek, setSelectedWeek] = useState<string>(getCurrentWeekMonday());
   const [existingMenu, setExistingMenu] = useState<Menu | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItemInput[]>([]);
@@ -46,12 +56,16 @@ export default function ManageMenuScreen({ navigation }: any) {
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      navigation.goBack();
+      if (onBack) {
+        onBack();
+      } else if (navigation) {
+        navigation.goBack();
+      }
       return true;
     });
 
     return () => backHandler.remove();
-  }, [navigation]);
+  }, [navigation, onBack]);
 
   const loadMenu = async () => {
     setLoading(true);
@@ -68,7 +82,6 @@ export default function ManageMenuScreen({ navigation }: any) {
         }));
         setMenuItems(items);
       } else {
-        // Initialize with empty items for each day
         setMenuItems([]);
       }
     } catch (error) {
@@ -79,56 +92,51 @@ export default function ManageMenuScreen({ navigation }: any) {
     }
   };
 
+  const handlePreviousWeek = () => {
+    const currentDate = new Date(selectedWeek);
+    currentDate.setDate(currentDate.getDate() - 7);
+    const newMonday = getMondayOfWeek(currentDate);
+    setSelectedWeek(newMonday);
+  };
+
+  const handleNextWeek = () => {
+    const currentDate = new Date(selectedWeek);
+    currentDate.setDate(currentDate.getDate() + 7);
+    const newMonday = getMondayOfWeek(currentDate);
+    setSelectedWeek(newMonday);
+  };
+
   const addMenuItem = (day: DayOfWeek) => {
-    setMenuItems([
-      ...menuItems,
-      { day, name: '', price: '', allergens: '' },
-    ]);
+    setMenuItems([...menuItems, { day, name: '', price: '', allergens: '' }]);
+  };
+
+  const updateMenuItem = (index: number, field: keyof MenuItemInput, value: string) => {
+    const updated = [...menuItems];
+    updated[index] = { ...updated[index], [field]: value };
+    setMenuItems(updated);
   };
 
   const removeMenuItem = (index: number) => {
-    const newItems = [...menuItems];
-    newItems.splice(index, 1);
-    setMenuItems(newItems);
+    setMenuItems(menuItems.filter((_, i) => i !== index));
   };
 
-  const updateMenuItem = (
-    index: number,
-    field: keyof MenuItemInput,
-    value: string
-  ) => {
-    const newItems = [...menuItems];
-    newItems[index] = { ...newItems[index], [field]: value };
-    setMenuItems(newItems);
-  };
-
-  const validateAndSaveMenu = async () => {
+  const handleSaveMenu = async () => {
     // Validate
-    if (menuItems.length === 0) {
-      Alert.alert('Error', 'Please add at least one menu item');
+    const invalidItems = menuItems.filter((item) => !item.name || !item.price);
+    if (invalidItems.length > 0) {
+      Alert.alert('Validation Error', 'Please fill in name and price for all menu items');
       return;
-    }
-
-    for (const item of menuItems) {
-      if (!item.name.trim()) {
-        Alert.alert('Error', 'All items must have a name');
-        return;
-      }
-      if (!item.price.trim() || isNaN(parseFloat(item.price))) {
-        Alert.alert('Error', 'All items must have a valid price');
-        return;
-      }
     }
 
     setSaving(true);
     try {
-      const items: Omit<MenuItem, 'id'>[] = menuItems.map((item) => ({
+      const items = menuItems.map((item) => ({
         day: item.day,
         name: item.name.trim(),
         price: parseFloat(item.price),
         allergens: item.allergens
           ? item.allergens.split(',').map((a) => a.trim()).filter(Boolean)
-          : undefined,
+          : [],
       }));
 
       if (existingMenu) {
@@ -138,8 +146,8 @@ export default function ManageMenuScreen({ navigation }: any) {
         await createMenu(selectedWeek, items);
         Alert.alert('Success', 'Menu created successfully');
       }
-
-      await loadMenu();
+      
+      loadMenu();
     } catch (error) {
       console.error('Error saving menu:', error);
       Alert.alert('Error', 'Failed to save menu');
@@ -148,332 +156,196 @@ export default function ManageMenuScreen({ navigation }: any) {
     }
   };
 
-  const changeWeek = (offset: number) => {
-    const currentDate = new Date(selectedWeek);
-    currentDate.setDate(currentDate.getDate() + (offset * 7));
-    setSelectedWeek(getMondayOfWeek(currentDate));
-  };
-
   const getItemsForDay = (day: DayOfWeek) => {
-    return menuItems
-      .map((item, index) => ({ ...item, index }))
-      .filter((item) => item.day === day);
+    return menuItems.filter((item) => item.day === day);
   };
-
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Loading menu...</Text>
-      </View>
-    );
-  }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Manage Weekly Menu</Text>
-        </View>
-
-        <View style={styles.weekSelector}>
-          <TouchableOpacity
-            style={styles.weekButton}
-            onPress={() => changeWeek(-1)}
-          >
-            <Text style={styles.weekButtonText}>← Prev</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.weekInfo}>
-            <Text style={styles.weekText}>{formatWeekString(selectedWeek)}</Text>
-            {existingMenu && (
-              <Text style={styles.existingMenuText}>Editing menu</Text>
-            )}
-          </View>
-          
-          <TouchableOpacity
-            style={styles.weekButton}
-            onPress={() => changeWeek(1)}
-          >
-            <Text style={styles.weekButtonText}>Next →</Text>
-          </TouchableOpacity>
-        </View>
-
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+    <Box flex={1} bg="#F7F9FC" safeArea>
+      {/* Header */}
+      <HStack
+        bg="white"
+        px={4}
+        py={3}
+        alignItems="center"
+        borderBottomWidth={1}
+        borderBottomColor="gray.200"
+        shadow={1}
       >
-        {DAYS.map((day) => (
-          <View key={day} style={styles.daySection}>
-            <View style={styles.dayHeader}>
-              <Text style={styles.dayTitle}>{day}</Text>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => addMenuItem(day)}
-              >
-                <Text style={styles.addButtonText}>+ Add Item</Text>
-              </TouchableOpacity>
-            </View>
+        {(onBack || navigation) && (
+          <IconButton
+            icon={<Ionicons name="arrow-back-outline" size={24} color="#1F2937" />}
+            onPress={() => {
+              if (onBack) onBack();
+              else if (navigation) navigation.goBack();
+            }}
+            mr={2}
+          />
+        )}
+        <Heading size="lg" color="gray.800" flex={1}>
+          🍽️ Manage Menu
+        </Heading>
+      </HStack>
 
-            {getItemsForDay(day).map((item) => (
-              <View key={item.index} style={styles.menuItemCard}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Item name"
-                  value={item.name}
-                  onChangeText={(text) =>
-                    updateMenuItem(item.index, 'name', text)
-                  }
+      {loading ? (
+        <Box flex={1} justifyContent="center" alignItems="center">
+          <Spinner size="lg" color="primary.400" />
+          <Text mt={4} color="gray.600">Loading menu...</Text>
+        </Box>
+      ) : (
+        <ScrollView flex={1}>
+          <VStack space={4} px={4} py={4}>
+            {/* Week Selector */}
+            <Box bg="white" p={4} rounded="xl" shadow={1}>
+              <Text fontSize="sm" fontWeight="600" color="gray.600" mb={2}>
+                Select Week
+              </Text>
+              <HStack space={2} alignItems="center" justifyContent="space-between">
+                <IconButton
+                  icon={<Ionicons name="chevron-back-outline" size={24} color="#3B82F6" />}
+                  onPress={handlePreviousWeek}
+                  variant="ghost"
                 />
-                
-                <TextInput
-                  style={styles.priceInput}
-                  placeholder="Price"
-                  value={item.price}
-                  keyboardType="decimal-pad"
-                  onChangeText={(text) =>
-                    updateMenuItem(item.index, 'price', text)
-                  }
+                <VStack flex={1} alignItems="center">
+                  <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                    {formatWeekString(selectedWeek)}
+                  </Text>
+                  {existingMenu && (
+                    <Badge colorScheme="success" rounded="full" mt={1}>
+                      Menu Exists
+                    </Badge>
+                  )}
+                </VStack>
+                <IconButton
+                  icon={<Ionicons name="chevron-forward-outline" size={24} color="#3B82F6" />}
+                  onPress={handleNextWeek}
+                  variant="ghost"
                 />
-                
-                <TextInput
-                  style={styles.input}
-                  placeholder="Allergens (comma-separated)"
-                  value={item.allergens}
-                  onChangeText={(text) =>
-                    updateMenuItem(item.index, 'allergens', text)
-                  }
-                />
-                
-                <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={() => removeMenuItem(item.index)}
-                >
-                  <Text style={styles.removeButtonText}>Remove</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+              </HStack>
+            </Box>
 
-            {getItemsForDay(day).length === 0 && (
-              <Text style={styles.noItemsText}>No items for this day</Text>
-            )}
-          </View>
-        ))}
-      </ScrollView>
+            {/* Menu Items by Day */}
+            {DAYS.map((day) => {
+              const dayItems = getItemsForDay(day);
+              return (
+                <Box key={day} bg="white" p={4} rounded="xl" shadow={1}>
+                  <HStack justifyContent="space-between" alignItems="center" mb={3}>
+                    <Heading size="md" color="gray.800">
+                      {day}
+                    </Heading>
+                    <Button
+                      size="sm"
+                      onPress={() => addMenuItem(day)}
+                      leftIcon={<Ionicons name="add-outline" size={16} color="white" />}
+                      bg="primary.400"
+                      _pressed={{ bg: 'primary.500' }}
+                    >
+                      Add Item
+                    </Button>
+                  </HStack>
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-          onPress={validateAndSaveMenu}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.saveButtonText}>
+                  {dayItems.length === 0 ? (
+                    <Box bg="gray.50" p={4} rounded="lg" alignItems="center">
+                      <Ionicons name="fast-food-outline" size={32} color="#9CA3AF" />
+                      <Text color="gray.500" fontSize="sm" mt={2}>
+                        No items for this day
+                      </Text>
+                    </Box>
+                  ) : (
+                    <VStack space={3}>
+                      {menuItems.map((item, index) => {
+                        if (item.day !== day) return null;
+                        return (
+                          <Box
+                            key={index}
+                            bg="gray.50"
+                            p={3}
+                            rounded="lg"
+                            borderWidth={1}
+                            borderColor="gray.200"
+                          >
+                            <HStack justifyContent="space-between" alignItems="center" mb={2}>
+                              <Text fontSize="sm" fontWeight="600" color="gray.700">
+                                Item {menuItems.filter((i) => i.day === day).indexOf(item) + 1}
+                              </Text>
+                              <IconButton
+                                icon={<Ionicons name="trash-outline" size={20} color="#EF4444" />}
+                                onPress={() => removeMenuItem(index)}
+                                size="sm"
+                                variant="ghost"
+                              />
+                            </HStack>
+
+                            <VStack space={2}>
+                              <FormControl>
+                                <FormControl.Label>
+                                  <Text fontSize="xs" color="gray.600">Item Name</Text>
+                                </FormControl.Label>
+                                <Input
+                                  value={item.name}
+                                  onChangeText={(value) => updateMenuItem(index, 'name', value)}
+                                  placeholder="e.g., Chicken Sandwich"
+                                  bg="white"
+                                  borderColor="gray.300"
+                                  _focus={{ borderColor: 'primary.400', bg: 'white' }}
+                                />
+                              </FormControl>
+
+                              <FormControl>
+                                <FormControl.Label>
+                                  <Text fontSize="xs" color="gray.600">Price (R)</Text>
+                                </FormControl.Label>
+                                <Input
+                                  value={item.price}
+                                  onChangeText={(value) => updateMenuItem(index, 'price', value)}
+                                  placeholder="0.00"
+                                  keyboardType="decimal-pad"
+                                  bg="white"
+                                  borderColor="gray.300"
+                                  _focus={{ borderColor: 'primary.400', bg: 'white' }}
+                                />
+                              </FormControl>
+
+                              <FormControl>
+                                <FormControl.Label>
+                                  <Text fontSize="xs" color="gray.600">Allergens (comma separated)</Text>
+                                </FormControl.Label>
+                                <Input
+                                  value={item.allergens}
+                                  onChangeText={(value) => updateMenuItem(index, 'allergens', value)}
+                                  placeholder="e.g., Dairy, Gluten"
+                                  bg="white"
+                                  borderColor="gray.300"
+                                  _focus={{ borderColor: 'primary.400', bg: 'white' }}
+                                />
+                              </FormControl>
+                            </VStack>
+                          </Box>
+                        );
+                      })}
+                    </VStack>
+                  )}
+                </Box>
+              );
+            })}
+
+            {/* Save Button */}
+            <Button
+              size="lg"
+              bg="primary.400"
+              _pressed={{ bg: 'primary.500' }}
+              onPress={handleSaveMenu}
+              isLoading={saving}
+              isLoadingText="Saving..."
+              leftIcon={<Ionicons name="checkmark-outline" size={20} color="white" />}
+              mt={4}
+              mb={8}
+            >
               {existingMenu ? 'Update Menu' : 'Create Menu'}
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
-      </View>
-    </SafeAreaView>
+            </Button>
+          </VStack>
+        </ScrollView>
+      )}
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#007AFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
-  },
-  header: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  weekSelector: {
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  weekButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    backgroundColor: '#007AFF',
-    borderRadius: 6,
-    minWidth: 70,
-  },
-  weekButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  weekInfo: {
-    flex: 1,
-    alignItems: 'center',
-    marginHorizontal: 10,
-  },
-  weekText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333',
-  },
-  existingMenuText: {
-    fontSize: 11,
-    color: '#007AFF',
-    fontStyle: 'italic',
-    marginTop: 2,
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  daySection: {
-    backgroundColor: '#fff',
-    marginTop: 10,
-    marginHorizontal: 12,
-    marginBottom: 4,
-    padding: 14,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  dayHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  dayTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  addButton: {
-    backgroundColor: '#34C759',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  menuItemCard: {
-    backgroundColor: '#f9f9f9',
-    padding: 10,
-    borderRadius: 5,
-    marginVertical: 5,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 8,
-    fontSize: 16,
-  },
-  priceInput: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 8,
-    fontSize: 16,
-    width: 120,
-  },
-  removeButton: {
-    backgroundColor: '#FF3B30',
-    padding: 8,
-    borderRadius: 5,
-    alignSelf: 'flex-start',
-  },
-  removeButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  noItemsText: {
-    color: '#999',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginVertical: 10,
-  },
-  footer: {
-    backgroundColor: '#fff',
-    padding: 12,
-    paddingBottom: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  saveButton: {
-    backgroundColor: '#34C759',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#999',
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
-  cancelButton: {
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-  },
-  cancelButtonText: {
-    color: '#666',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

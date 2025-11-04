@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { Alert, FlatList } from 'react-native';
 import {
-  View,
+  Box,
+  VStack,
+  HStack,
   Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  Modal,
   ScrollView,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+  Button,
+  Input,
+  Modal,
+  Spinner,
+  Pressable,
+  Select,
+  FormControl,
+} from 'native-base';
+import { Ionicons } from '@expo/vector-icons';
 import {
   Fee,
   FeeTemplate,
@@ -86,12 +89,10 @@ export default function ManageFeesScreen() {
     
     const days: Array<Date | null> = [];
     
-    // Add empty slots for days before the month starts
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
     
-    // Add all days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
     }
@@ -138,7 +139,7 @@ export default function ManageFeesScreen() {
         amount: parseFloat(newFee.amount),
         dueDate: newFee.dueDate,
         status: 'pending',
-        createdBy: 'admin', // TODO: Get from auth context
+        createdBy: 'admin',
       });
 
       Alert.alert('Success', 'Fee created successfully');
@@ -172,7 +173,7 @@ export default function ManageFeesScreen() {
         amount: parseFloat(newTemplate.amount),
         recurring: newTemplate.recurring,
         active: true,
-        createdBy: 'admin', // TODO: Get from auth context
+        createdBy: 'admin',
       });
 
       Alert.alert('Success', 'Template created successfully');
@@ -202,9 +203,9 @@ export default function ManageFeesScreen() {
         selectedTemplateId,
         assignUserId,
         assignChildId || '',
-        '', // childName - will be looked up
+        '',
         assignDueDate,
-        'admin' // adminId - TODO: Get from auth context
+        'admin'
       );
 
       Alert.alert('Success', 'Fee assigned successfully');
@@ -245,905 +246,689 @@ export default function ManageFeesScreen() {
     );
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return { bg: 'success.500', color: 'white' };
+      case 'overdue': return { bg: 'danger.500', color: 'white' };
+      case 'pending': return { bg: 'warning.500', color: 'white' };
+      default: return { bg: 'gray.500', color: 'white' };
+    }
+  };
+
   const renderFeeItem = ({ item }: { item: FeeWithUserName }) => {
-    const statusColor = item.status === 'paid' ? '#4CAF50' : 
-                       item.status === 'overdue' ? '#f44336' : '#FF9800';
+    const statusColors = getStatusColor(item.status);
     
     return (
-      <View style={styles.feeCard}>
-        <View style={styles.feeHeader}>
-          <Text style={styles.feeType}>{item.type.toUpperCase()}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
-            <Text style={styles.statusText}>{item.status}</Text>
-          </View>
-        </View>
+      <Box bg="white" borderRadius="lg" p={4} mb={3} shadow={1} borderWidth={1} borderColor="gray.200">
+        <HStack justifyContent="space-between" alignItems="center" mb={2}>
+          <Text fontSize="xs" fontWeight="bold" color="gray.600">
+            {item.type.toUpperCase()}
+          </Text>
+          <Box bg={statusColors.bg} px={2} py={1} borderRadius="md">
+            <Text fontSize="xs" fontWeight="bold" color={statusColors.color}>
+              {item.status}
+            </Text>
+          </Box>
+        </HStack>
         
-        <Text style={styles.feeDescription}>{item.description}</Text>
+        <Text fontSize="md" fontWeight="bold" color="gray.800" mb={2}>
+          {item.description}
+        </Text>
         
-        <View style={styles.feeDetails}>
-          <Text style={styles.feeAmount}>R {item.amount.toFixed(2)}</Text>
+        <HStack justifyContent="space-between" alignItems="center" mb={2}>
+          <Text fontSize="lg" fontWeight="bold" color="primary.600">
+            R {item.amount.toFixed(2)}
+          </Text>
           {item.dueDate && (
-            <Text style={styles.feeDueDate}>
+            <Text fontSize="sm" color="gray.600">
               Due: {new Date(item.dueDate).toLocaleDateString()}
             </Text>
           )}
-        </View>
+        </HStack>
         
         {item.userName && (
-          <Text style={styles.feeUser}>Parent: {item.userName}</Text>
+          <Text fontSize="sm" color="gray.600" mb={1}>Parent: {item.userName}</Text>
         )}
         {item.childName && (
-          <Text style={styles.feeChild}>Child: {item.childName}</Text>
+          <Text fontSize="sm" color="gray.600" mb={2}>Child: {item.childName}</Text>
         )}
         
         {item.status === 'pending' && (
-          <TouchableOpacity
-            style={styles.deleteButton}
+          <Button
+            size="sm"
+            bg="danger.500"
+            _pressed={{ bg: 'danger.600' }}
+            mt={2}
             onPress={() => handleDeleteFee(item.id)}
+            leftIcon={<Ionicons name="trash-outline" size={16} color="white" />}
           >
-            <Text style={styles.deleteButtonText}>Delete</Text>
-          </TouchableOpacity>
+            <Text color="white" fontWeight="semibold" fontSize="sm">Delete</Text>
+          </Button>
         )}
-      </View>
+      </Box>
     );
   };
 
   const renderTemplateItem = ({ item }: { item: FeeTemplate }) => (
-    <View style={styles.templateCard}>
-      <Text style={styles.templateName}>{item.name}</Text>
-      <Text style={styles.templateType}>{item.type}</Text>
-      <Text style={styles.templateDescription}>{item.description}</Text>
-      <Text style={styles.templateAmount}>Default: R {item.amount.toFixed(2)}</Text>
-    </View>
+    <Box bg="white" borderRadius="lg" p={4} mr={3} w={200} shadow={1} borderWidth={1} borderColor="gray.200">
+      <Text fontSize="md" fontWeight="bold" color="gray.800" mb={1}>
+        {item.name}
+      </Text>
+      <Text fontSize="xs" color="gray.600" mb={2}>
+        {item.type}
+      </Text>
+      <Text fontSize="sm" color="gray.700" mb={2}>
+        {item.description}
+      </Text>
+      <Text fontSize="md" fontWeight="bold" color="primary.600">
+        Default: R {item.amount.toFixed(2)}
+      </Text>
+    </Box>
   );
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6200ea" />
-      </View>
+      <Box flex={1} justifyContent="center" alignItems="center" bg="#F7F9FC">
+        <Spinner size="lg" color="primary.400" />
+      </Box>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <Box flex={1} bg="#F7F9FC" safeArea>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Manage Fees</Text>
-      </View>
+      <Box bg="white" px={5} py={4} borderBottomWidth={1} borderBottomColor="gray.200">
+        <Text fontSize="2xl" fontWeight="bold" color="gray.800">
+          Manage Fees
+        </Text>
+      </Box>
 
       {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={styles.actionButton}
+      <HStack px={3} py={3} space={2} flexWrap="wrap">
+        <Button
+          flex={1}
+          minW="100px"
+          size="sm"
+          bg="primary.400"
+          _pressed={{ bg: 'primary.500' }}
           onPress={() => setShowCreateModal(true)}
+          leftIcon={<Ionicons name="add-circle-outline" size={16} color="white" />}
         >
-          <Text style={styles.actionButtonText}>+ Create Fee</Text>
-        </TouchableOpacity>
+          <Text color="white" fontWeight="bold" fontSize="xs">Create Fee</Text>
+        </Button>
         
-        <TouchableOpacity
-          style={styles.actionButton}
+        <Button
+          flex={1}
+          minW="100px"
+          size="sm"
+          bg="primary.400"
+          _pressed={{ bg: 'primary.500' }}
           onPress={() => setShowTemplateModal(true)}
+          leftIcon={<Ionicons name="document-text-outline" size={16} color="white" />}
         >
-          <Text style={styles.actionButtonText}>+ New Template</Text>
-        </TouchableOpacity>
+          <Text color="white" fontWeight="bold" fontSize="xs">New Template</Text>
+        </Button>
         
-        <TouchableOpacity
-          style={styles.actionButton}
+        <Button
+          flex={1}
+          minW="100px"
+          size="sm"
+          bg="primary.400"
+          _pressed={{ bg: 'primary.500' }}
           onPress={() => setShowAssignModal(true)}
+          leftIcon={<Ionicons name="person-add-outline" size={16} color="white" />}
         >
-          <Text style={styles.actionButtonText}>Assign Fee</Text>
-        </TouchableOpacity>
-      </View>
+          <Text color="white" fontWeight="bold" fontSize="xs">Assign Fee</Text>
+        </Button>
+      </HStack>
 
       {/* Fees List - Show only 2 */}
-      <View style={styles.feesHeader}>
-        <Text style={styles.sectionTitle}>Fees ({fees.length})</Text>
+      <HStack justifyContent="space-between" alignItems="center" px={3} pt={3} pb={2}>
+        <Text fontSize="lg" fontWeight="bold" color="gray.800">
+          Fees ({fees.length})
+        </Text>
         {fees.length > 2 && (
-          <TouchableOpacity
-            style={styles.viewAllButton}
+          <Button
+            size="xs"
+            bg="primary.400"
+            _pressed={{ bg: 'primary.500' }}
+            borderRadius="full"
             onPress={() => setShowAllFeesModal(true)}
+            rightIcon={<Ionicons name="arrow-forward-outline" size={14} color="white" />}
           >
-            <Text style={styles.viewAllButtonText}>View All →</Text>
-          </TouchableOpacity>
+            <Text color="white" fontWeight="bold" fontSize="xs">View All</Text>
+          </Button>
         )}
-      </View>
+      </HStack>
       
-      {fees.length === 0 ? (
-        <Text style={styles.emptyText}>No fees found</Text>
-      ) : (
-        <View>
-          {fees.slice(0, 2).map((item) => (
-            <View key={item.id}>
-              {renderFeeItem({ item })}
-            </View>
-          ))}
-        </View>
-      )}
+      <Box px={3}>
+        {fees.length === 0 ? (
+          <Text fontSize="md" color="gray.500" textAlign="center" py={5}>
+            No fees found
+          </Text>
+        ) : (
+          <VStack space={0}>
+            {fees.slice(0, 2).map((item) => (
+              <Box key={item.id}>
+                {renderFeeItem({ item })}
+              </Box>
+            ))}
+          </VStack>
+        )}
+      </Box>
 
       {/* Templates Section */}
-      <Text style={styles.sectionTitle}>Fee Templates ({templates.length})</Text>
+      <Text fontSize="lg" fontWeight="bold" color="gray.800" px={3} pt={4} pb={2}>
+        Fee Templates ({templates.length})
+      </Text>
       <FlatList
         data={templates}
         keyExtractor={(item) => item.id!}
         renderItem={renderTemplateItem}
         horizontal
-        contentContainerStyle={styles.templateList}
+        contentContainerStyle={{ paddingHorizontal: 12 }}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No templates created</Text>
+          <Text fontSize="md" color="gray.500" py={5} px={3}>
+            No templates created
+          </Text>
         }
       />
 
       {/* Create Fee Modal */}
-      <Modal
-        visible={showCreateModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowCreateModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <Modal.Content maxWidth="400px" maxHeight="90%" bg="white">
+          <Modal.CloseButton />
+          <Modal.Header bg="white" borderBottomWidth={1} borderBottomColor="gray.200">
+            <Text fontSize="lg" fontWeight="bold" color="gray.800">Create New Fee</Text>
+          </Modal.Header>
+          <Modal.Body bg="white">
             <ScrollView>
-              <Text style={styles.modalTitle}>Create New Fee</Text>
-              
-              <Text style={styles.inputLabel}>Parent *</Text>
-              <Picker
-                selectedValue={newFee.userId}
-                style={styles.input}
-                onValueChange={(value) => setNewFee({ ...newFee, userId: value })}
-              >
-                <Picker.Item label="Select Parent" value="" />
-                {availableUsers.map(user => (
-                  <Picker.Item key={user.id} label={`${user.name} (${user.email})`} value={user.id} />
-                ))}
-              </Picker>
-              
-              <Text style={styles.inputLabel}>Fee Type *</Text>
-              <Picker
-                selectedValue={newFee.type}
-                style={styles.input}
-                onValueChange={(value) => setNewFee({ ...newFee, type: value as Fee['type'] })}
-              >
-                <Picker.Item label="Tuition" value="tuition" />
-                <Picker.Item label="Registration" value="registration" />
-                <Picker.Item label="Activity" value="activity" />
-                <Picker.Item label="Late Fee" value="late_fee" />
-                <Picker.Item label="Other" value="other" />
-              </Picker>
-              
-              <Text style={styles.inputLabel}>Description *</Text>
-              <TextInput
-                style={styles.input}
-                value={newFee.description}
-                onChangeText={(text) => setNewFee({ ...newFee, description: text })}
-                placeholder="e.g., Monthly Tuition - January 2024"
-              />
-              
-              <Text style={styles.inputLabel}>Amount (ZAR) *</Text>
-              <TextInput
-                style={styles.input}
-                value={newFee.amount}
-                onChangeText={(text) => setNewFee({ ...newFee, amount: text })}
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-              />
-              
-              <Text style={styles.inputLabel}>Due Date *</Text>
-              <TouchableOpacity
-                style={styles.datePickerButton}
-                onPress={() => setShowCreateDueDatePicker(true)}
-              >
-                <Text style={styles.datePickerButtonText}>
-                  {newFee.dueDate.toLocaleDateString()}
-                </Text>
-              </TouchableOpacity>
-              
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setShowCreateModal(false)}
-                >
-                  <Text style={styles.modalButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.submitButton]}
-                  onPress={handleCreateFee}
-                >
-                  <Text style={styles.modalButtonText}>Create</Text>
-                </TouchableOpacity>
-              </View>
+              <VStack space={3}>
+                <FormControl isRequired>
+                  <FormControl.Label>Parent</FormControl.Label>
+                  <Select
+                    selectedValue={newFee.userId}
+                    placeholder="Select Parent"
+                    onValueChange={(value) => setNewFee({ ...newFee, userId: value })}
+                    bg="white"
+                    borderColor="gray.300"
+                  >
+                    {availableUsers.map(user => (
+                      <Select.Item key={user.id} label={`${user.name} (${user.email})`} value={user.id} />
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormControl.Label>Fee Type</FormControl.Label>
+                  <Select
+                    selectedValue={newFee.type}
+                    onValueChange={(value) => setNewFee({ ...newFee, type: value as Fee['type'] })}
+                    bg="white"
+                    borderColor="gray.300"
+                  >
+                    <Select.Item label="Tuition" value="tuition" />
+                    <Select.Item label="Registration" value="registration" />
+                    <Select.Item label="Activity" value="activity" />
+                    <Select.Item label="Late Fee" value="late_fee" />
+                    <Select.Item label="Other" value="other" />
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormControl.Label>Description</FormControl.Label>
+                  <Input
+                    value={newFee.description}
+                    onChangeText={(text) => setNewFee({ ...newFee, description: text })}
+                    placeholder="e.g., Monthly Tuition - January 2024"
+                    bg="white"
+                    borderColor="gray.300"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormControl.Label>Amount (ZAR)</FormControl.Label>
+                  <Input
+                    value={newFee.amount}
+                    onChangeText={(text) => setNewFee({ ...newFee, amount: text })}
+                    placeholder="0.00"
+                    keyboardType="decimal-pad"
+                    bg="white"
+                    borderColor="gray.300"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormControl.Label>Due Date</FormControl.Label>
+                  <Pressable
+                    bg="white"
+                    borderWidth={1}
+                    borderColor="gray.300"
+                    borderRadius="md"
+                    p={3}
+                    onPress={() => setShowCreateDueDatePicker(true)}
+                  >
+                    <Text fontSize="md" color="gray.800">
+                      {newFee.dueDate.toLocaleDateString()}
+                    </Text>
+                  </Pressable>
+                </FormControl>
+              </VStack>
             </ScrollView>
-          </View>
-        </View>
+          </Modal.Body>
+          <Modal.Footer bg="white" borderTopWidth={1} borderTopColor="gray.200">
+            <HStack space={2} w="100%">
+              <Button
+                flex={1}
+                variant="ghost"
+                onPress={() => setShowCreateModal(false)}
+              >
+                <Text color="gray.600" fontWeight="semibold">Cancel</Text>
+              </Button>
+              <Button
+                flex={1}
+                bg="primary.400"
+                _pressed={{ bg: 'primary.500' }}
+                onPress={handleCreateFee}
+              >
+                <Text color="white" fontWeight="bold">Create</Text>
+              </Button>
+            </HStack>
+          </Modal.Footer>
+        </Modal.Content>
       </Modal>
 
       {/* Create Template Modal */}
-      <Modal
-        visible={showTemplateModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowTemplateModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+      <Modal isOpen={showTemplateModal} onClose={() => setShowTemplateModal(false)}>
+        <Modal.Content maxWidth="400px" maxHeight="90%" bg="white">
+          <Modal.CloseButton />
+          <Modal.Header bg="white" borderBottomWidth={1} borderBottomColor="gray.200">
+            <Text fontSize="lg" fontWeight="bold" color="gray.800">Create Fee Template</Text>
+          </Modal.Header>
+          <Modal.Body bg="white">
             <ScrollView>
-              <Text style={styles.modalTitle}>Create Fee Template</Text>
-              
-              <Text style={styles.inputLabel}>Template Name *</Text>
-              <TextInput
-                style={styles.input}
-                value={newTemplate.name}
-                onChangeText={(text) => setNewTemplate({ ...newTemplate, name: text })}
-                placeholder="e.g., Monthly Tuition"
-              />
-              
-              <Text style={styles.inputLabel}>Fee Type *</Text>
-              <Picker
-                selectedValue={newTemplate.type}
-                style={styles.input}
-                onValueChange={(value) => setNewTemplate({ ...newTemplate, type: value as Fee['type'] })}
-              >
-                <Picker.Item label="Tuition" value="tuition" />
-                <Picker.Item label="Registration" value="registration" />
-                <Picker.Item label="Activity" value="activity" />
-                <Picker.Item label="Late Fee" value="late_fee" />
-                <Picker.Item label="Other" value="other" />
-              </Picker>
-              
-              <Text style={styles.inputLabel}>Description *</Text>
-              <TextInput
-                style={styles.input}
-                value={newTemplate.description}
-                onChangeText={(text) => setNewTemplate({ ...newTemplate, description: text })}
-                placeholder="e.g., Monthly tuition fee"
-                multiline
-              />
-              
-              <Text style={styles.inputLabel}>Default Amount (ZAR) *</Text>
-              <TextInput
-                style={styles.input}
-                value={newTemplate.amount}
-                onChangeText={(text) => setNewTemplate({ ...newTemplate, amount: text })}
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-              />
-              
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setShowTemplateModal(false)}
-                >
-                  <Text style={styles.modalButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.submitButton]}
-                  onPress={handleCreateTemplate}
-                >
-                  <Text style={styles.modalButtonText}>Create</Text>
-                </TouchableOpacity>
-              </View>
+              <VStack space={3}>
+                <FormControl isRequired>
+                  <FormControl.Label>Template Name</FormControl.Label>
+                  <Input
+                    value={newTemplate.name}
+                    onChangeText={(text) => setNewTemplate({ ...newTemplate, name: text })}
+                    placeholder="e.g., Monthly Tuition"
+                    bg="white"
+                    borderColor="gray.300"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormControl.Label>Fee Type</FormControl.Label>
+                  <Select
+                    selectedValue={newTemplate.type}
+                    onValueChange={(value) => setNewTemplate({ ...newTemplate, type: value as Fee['type'] })}
+                    bg="white"
+                    borderColor="gray.300"
+                  >
+                    <Select.Item label="Tuition" value="tuition" />
+                    <Select.Item label="Registration" value="registration" />
+                    <Select.Item label="Activity" value="activity" />
+                    <Select.Item label="Late Fee" value="late_fee" />
+                    <Select.Item label="Other" value="other" />
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormControl.Label>Description</FormControl.Label>
+                  <Input
+                    value={newTemplate.description}
+                    onChangeText={(text) => setNewTemplate({ ...newTemplate, description: text })}
+                    placeholder="e.g., Monthly tuition fee"
+                    bg="white"
+                    borderColor="gray.300"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormControl.Label>Default Amount (ZAR)</FormControl.Label>
+                  <Input
+                    value={newTemplate.amount}
+                    onChangeText={(text) => setNewTemplate({ ...newTemplate, amount: text })}
+                    placeholder="0.00"
+                    keyboardType="decimal-pad"
+                    bg="white"
+                    borderColor="gray.300"
+                  />
+                </FormControl>
+              </VStack>
             </ScrollView>
-          </View>
-        </View>
+          </Modal.Body>
+          <Modal.Footer bg="white" borderTopWidth={1} borderTopColor="gray.200">
+            <HStack space={2} w="100%">
+              <Button
+                flex={1}
+                variant="ghost"
+                onPress={() => setShowTemplateModal(false)}
+              >
+                <Text color="gray.600" fontWeight="semibold">Cancel</Text>
+              </Button>
+              <Button
+                flex={1}
+                bg="primary.400"
+                _pressed={{ bg: 'primary.500' }}
+                onPress={handleCreateTemplate}
+              >
+                <Text color="white" fontWeight="bold">Create</Text>
+              </Button>
+            </HStack>
+          </Modal.Footer>
+        </Modal.Content>
       </Modal>
 
       {/* Assign Template Modal */}
-      <Modal
-        visible={showAssignModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowAssignModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+      <Modal isOpen={showAssignModal} onClose={() => setShowAssignModal(false)}>
+        <Modal.Content maxWidth="400px" maxHeight="90%" bg="white">
+          <Modal.CloseButton />
+          <Modal.Header bg="white" borderBottomWidth={1} borderBottomColor="gray.200">
+            <Text fontSize="lg" fontWeight="bold" color="gray.800">Assign Fee from Template</Text>
+          </Modal.Header>
+          <Modal.Body bg="white">
             <ScrollView>
-              <Text style={styles.modalTitle}>Assign Fee from Template</Text>
-              
-              <Text style={styles.inputLabel}>Select Template *</Text>
-              <Picker
-                selectedValue={selectedTemplateId}
-                style={styles.input}
-                onValueChange={(value: string) => {
-                  setSelectedTemplateId(value);
-                  const template = templates.find(t => t.id === value);
-                  if (template) {
-                    setAssignAmount(template.amount.toString());
-                  }
-                }}
-              >
-                <Picker.Item label="Select Template" value="" />
-                {templates.map(template => (
-                  <Picker.Item key={template.id} label={template.name} value={template.id!} />
-                ))}
-              </Picker>
-              
-              <Text style={styles.inputLabel}>Parent *</Text>
-              <Picker
-                selectedValue={assignUserId}
-                style={styles.input}
-                onValueChange={(value) => setAssignUserId(value)}
-              >
-                <Picker.Item label="Select Parent" value="" />
-                {availableUsers.map(user => (
-                  <Picker.Item key={user.id} label={`${user.name} (${user.email})`} value={user.id} />
-                ))}
-              </Picker>
-              
-              <Text style={styles.inputLabel}>Amount (ZAR) *</Text>
-              <TextInput
-                style={styles.input}
-                value={assignAmount}
-                onChangeText={setAssignAmount}
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-              />
-              
-              <Text style={styles.inputLabel}>Due Date *</Text>
-              <TouchableOpacity
-                style={styles.datePickerButton}
-                onPress={() => setShowAssignDueDatePicker(true)}
-              >
-                <Text style={styles.datePickerButtonText}>
-                  {assignDueDate.toLocaleDateString()}
-                </Text>
-              </TouchableOpacity>
-              
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setShowAssignModal(false)}
-                >
-                  <Text style={styles.modalButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.submitButton]}
-                  onPress={handleAssignTemplate}
-                >
-                  <Text style={styles.modalButtonText}>Assign</Text>
-                </TouchableOpacity>
-              </View>
+              <VStack space={3}>
+                <FormControl isRequired>
+                  <FormControl.Label>Select Template</FormControl.Label>
+                  <Select
+                    selectedValue={selectedTemplateId}
+                    placeholder="Select Template"
+                    onValueChange={(value: string) => {
+                      setSelectedTemplateId(value);
+                      const template = templates.find(t => t.id === value);
+                      if (template) {
+                        setAssignAmount(template.amount.toString());
+                      }
+                    }}
+                    bg="white"
+                    borderColor="gray.300"
+                  >
+                    {templates.map(template => (
+                      <Select.Item key={template.id} label={template.name} value={template.id!} />
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormControl.Label>Parent</FormControl.Label>
+                  <Select
+                    selectedValue={assignUserId}
+                    placeholder="Select Parent"
+                    onValueChange={(value) => setAssignUserId(value)}
+                    bg="white"
+                    borderColor="gray.300"
+                  >
+                    {availableUsers.map(user => (
+                      <Select.Item key={user.id} label={`${user.name} (${user.email})`} value={user.id} />
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormControl.Label>Amount (ZAR)</FormControl.Label>
+                  <Input
+                    value={assignAmount}
+                    onChangeText={setAssignAmount}
+                    placeholder="0.00"
+                    keyboardType="decimal-pad"
+                    bg="white"
+                    borderColor="gray.300"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormControl.Label>Due Date</FormControl.Label>
+                  <Pressable
+                    bg="white"
+                    borderWidth={1}
+                    borderColor="gray.300"
+                    borderRadius="md"
+                    p={3}
+                    onPress={() => setShowAssignDueDatePicker(true)}
+                  >
+                    <Text fontSize="md" color="gray.800">
+                      {assignDueDate.toLocaleDateString()}
+                    </Text>
+                  </Pressable>
+                </FormControl>
+              </VStack>
             </ScrollView>
-          </View>
-        </View>
+          </Modal.Body>
+          <Modal.Footer bg="white" borderTopWidth={1} borderTopColor="gray.200">
+            <HStack space={2} w="100%">
+              <Button
+                flex={1}
+                variant="ghost"
+                onPress={() => setShowAssignModal(false)}
+              >
+                <Text color="gray.600" fontWeight="semibold">Cancel</Text>
+              </Button>
+              <Button
+                flex={1}
+                bg="primary.400"
+                _pressed={{ bg: 'primary.500' }}
+                onPress={handleAssignTemplate}
+              >
+                <Text color="white" fontWeight="bold">Assign</Text>
+              </Button>
+            </HStack>
+          </Modal.Footer>
+        </Modal.Content>
       </Modal>
 
       {/* Create Fee Date Picker Modal */}
-      <Modal
-        visible={showCreateDueDatePicker}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowCreateDueDatePicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.calendarModalContent}>
-            <View style={styles.calendarHeader}>
-              <TouchableOpacity
+      <Modal isOpen={showCreateDueDatePicker} onClose={() => setShowCreateDueDatePicker(false)}>
+        <Modal.Content maxWidth="400px" bg="white">
+          <Modal.CloseButton />
+          <Modal.Header bg="white" borderBottomWidth={1} borderBottomColor="gray.200">
+            <HStack justifyContent="space-between" alignItems="center" pr={8}>
+              <Pressable
                 onPress={() => {
                   const newDate = new Date(newFee.dueDate);
                   newDate.setMonth(newDate.getMonth() - 1);
                   setNewFee({ ...newFee, dueDate: newDate });
                 }}
+                p={2}
               >
-                <Text style={styles.calendarNavButton}>◀</Text>
-              </TouchableOpacity>
-              <Text style={styles.calendarMonthYear}>
+                <Ionicons name="chevron-back-outline" size={24} color="#4F46E5" />
+              </Pressable>
+              <Text fontSize="md" fontWeight="bold" color="gray.800">
                 {newFee.dueDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </Text>
-              <TouchableOpacity
+              <Pressable
                 onPress={() => {
                   const newDate = new Date(newFee.dueDate);
                   newDate.setMonth(newDate.getMonth() + 1);
                   setNewFee({ ...newFee, dueDate: newDate });
                 }}
+                p={2}
               >
-                <Text style={styles.calendarNavButton}>▶</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.calendarDaysHeader}>
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <Text key={day} style={styles.calendarDayHeader}>{day}</Text>
-              ))}
-            </View>
-
-            <View style={styles.calendarGrid}>
-              {getCalendarDays(newFee.dueDate).map((day, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.calendarDay,
-                    day && day.toDateString() === newFee.dueDate.toDateString() && styles.selectedDay,
-                  ]}
-                  onPress={() => {
-                    if (day) {
-                      setNewFee({ ...newFee, dueDate: day });
-                      setShowCreateDueDatePicker(false);
-                    }
-                  }}
-                  disabled={!day}
-                >
-                  <Text style={[
-                    styles.calendarDayText,
-                    day && day.toDateString() === newFee.dueDate.toDateString() && styles.selectedDayText,
-                  ]}>
-                    {day ? day.getDate() : ''}
+                <Ionicons name="chevron-forward-outline" size={24} color="#4F46E5" />
+              </Pressable>
+            </HStack>
+          </Modal.Header>
+          <Modal.Body bg="white">
+            <VStack space={2}>
+              <HStack justifyContent="space-around">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                  <Text key={day} fontSize="xs" fontWeight="bold" color="gray.600" w="40px" textAlign="center">
+                    {day}
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                ))}
+              </HStack>
 
-            <TouchableOpacity
-              style={styles.calendarCloseButton}
+              <HStack flexWrap="wrap">
+                {getCalendarDays(newFee.dueDate).map((day, index) => (
+                  <Box key={index} w="14.28%" p={1}>
+                    <Pressable
+                      h={10}
+                      justifyContent="center"
+                      alignItems="center"
+                      bg={day && day.toDateString() === newFee.dueDate.toDateString() ? 'primary.400' : 'transparent'}
+                      borderRadius="full"
+                      onPress={() => {
+                        if (day) {
+                          setNewFee({ ...newFee, dueDate: day });
+                          setShowCreateDueDatePicker(false);
+                        }
+                      }}
+                      isDisabled={!day}
+                    >
+                      <Text
+                        fontSize="md"
+                        color={day && day.toDateString() === newFee.dueDate.toDateString() ? 'white' : 'gray.800'}
+                        fontWeight={day && day.toDateString() === newFee.dueDate.toDateString() ? 'bold' : 'normal'}
+                      >
+                        {day ? day.getDate() : ''}
+                      </Text>
+                    </Pressable>
+                  </Box>
+                ))}
+              </HStack>
+            </VStack>
+          </Modal.Body>
+          <Modal.Footer bg="white" borderTopWidth={1} borderTopColor="gray.200">
+            <Button
+              w="100%"
+              bg="primary.400"
+              _pressed={{ bg: 'primary.500' }}
               onPress={() => setShowCreateDueDatePicker(false)}
             >
-              <Text style={styles.calendarCloseButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+              <Text color="white" fontWeight="bold">Close</Text>
+            </Button>
+          </Modal.Footer>
+        </Modal.Content>
       </Modal>
 
       {/* Assign Fee Date Picker Modal */}
-      <Modal
-        visible={showAssignDueDatePicker}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowAssignDueDatePicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.calendarModalContent}>
-            <View style={styles.calendarHeader}>
-              <TouchableOpacity
+      <Modal isOpen={showAssignDueDatePicker} onClose={() => setShowAssignDueDatePicker(false)}>
+        <Modal.Content maxWidth="400px" bg="white">
+          <Modal.CloseButton />
+          <Modal.Header bg="white" borderBottomWidth={1} borderBottomColor="gray.200">
+            <HStack justifyContent="space-between" alignItems="center" pr={8}>
+              <Pressable
                 onPress={() => {
                   const newDate = new Date(assignDueDate);
                   newDate.setMonth(newDate.getMonth() - 1);
                   setAssignDueDate(newDate);
                 }}
+                p={2}
               >
-                <Text style={styles.calendarNavButton}>◀</Text>
-              </TouchableOpacity>
-              <Text style={styles.calendarMonthYear}>
+                <Ionicons name="chevron-back-outline" size={24} color="#4F46E5" />
+              </Pressable>
+              <Text fontSize="md" fontWeight="bold" color="gray.800">
                 {assignDueDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </Text>
-              <TouchableOpacity
+              <Pressable
                 onPress={() => {
                   const newDate = new Date(assignDueDate);
                   newDate.setMonth(newDate.getMonth() + 1);
                   setAssignDueDate(newDate);
                 }}
+                p={2}
               >
-                <Text style={styles.calendarNavButton}>▶</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.calendarDaysHeader}>
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <Text key={day} style={styles.calendarDayHeader}>{day}</Text>
-              ))}
-            </View>
-
-            <View style={styles.calendarGrid}>
-              {getCalendarDays(assignDueDate).map((day, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.calendarDay,
-                    day && day.toDateString() === assignDueDate.toDateString() && styles.selectedDay,
-                  ]}
-                  onPress={() => {
-                    if (day) {
-                      setAssignDueDate(day);
-                      setShowAssignDueDatePicker(false);
-                    }
-                  }}
-                  disabled={!day}
-                >
-                  <Text style={[
-                    styles.calendarDayText,
-                    day && day.toDateString() === assignDueDate.toDateString() && styles.selectedDayText,
-                  ]}>
-                    {day ? day.getDate() : ''}
+                <Ionicons name="chevron-forward-outline" size={24} color="#4F46E5" />
+              </Pressable>
+            </HStack>
+          </Modal.Header>
+          <Modal.Body bg="white">
+            <VStack space={2}>
+              <HStack justifyContent="space-around">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                  <Text key={day} fontSize="xs" fontWeight="bold" color="gray.600" w="40px" textAlign="center">
+                    {day}
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                ))}
+              </HStack>
 
-            <TouchableOpacity
-              style={styles.calendarCloseButton}
+              <HStack flexWrap="wrap">
+                {getCalendarDays(assignDueDate).map((day, index) => (
+                  <Box key={index} w="14.28%" p={1}>
+                    <Pressable
+                      h={10}
+                      justifyContent="center"
+                      alignItems="center"
+                      bg={day && day.toDateString() === assignDueDate.toDateString() ? 'primary.400' : 'transparent'}
+                      borderRadius="full"
+                      onPress={() => {
+                        if (day) {
+                          setAssignDueDate(day);
+                          setShowAssignDueDatePicker(false);
+                        }
+                      }}
+                      isDisabled={!day}
+                    >
+                      <Text
+                        fontSize="md"
+                        color={day && day.toDateString() === assignDueDate.toDateString() ? 'white' : 'gray.800'}
+                        fontWeight={day && day.toDateString() === assignDueDate.toDateString() ? 'bold' : 'normal'}
+                      >
+                        {day ? day.getDate() : ''}
+                      </Text>
+                    </Pressable>
+                  </Box>
+                ))}
+              </HStack>
+            </VStack>
+          </Modal.Body>
+          <Modal.Footer bg="white" borderTopWidth={1} borderTopColor="gray.200">
+            <Button
+              w="100%"
+              bg="primary.400"
+              _pressed={{ bg: 'primary.500' }}
               onPress={() => setShowAssignDueDatePicker(false)}
             >
-              <Text style={styles.calendarCloseButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+              <Text color="white" fontWeight="bold">Close</Text>
+            </Button>
+          </Modal.Footer>
+        </Modal.Content>
       </Modal>
 
       {/* View All Fees Modal */}
-      <Modal
-        visible={showAllFeesModal}
-        animationType="slide"
-        transparent={false}
-        onRequestClose={() => setShowAllFeesModal(false)}
-      >
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>All Fees ({fees.length})</Text>
-          </View>
+      <Modal isOpen={showAllFeesModal} onClose={() => setShowAllFeesModal(false)} size="full">
+        <Modal.Content bg="#F7F9FC" maxWidth="100%" maxHeight="100%" flex={1}>
+          <Modal.CloseButton />
+          <Modal.Header bg="white" borderBottomWidth={1} borderBottomColor="gray.200">
+            <Text fontSize="xl" fontWeight="bold" color="gray.800">
+              All Fees ({fees.length})
+            </Text>
+          </Modal.Header>
+          <VStack flex={1} bg="#F7F9FC">
+            <Box bg="white" px={3} py={3}>
+              <FormControl>
+                <FormControl.Label>Filter:</FormControl.Label>
+                <Select
+                  selectedValue={filterStatus}
+                  onValueChange={(value) => setFilterStatus(value as typeof filterStatus)}
+                  bg="white"
+                  borderColor="gray.300"
+                >
+                  <Select.Item label="All" value="all" />
+                  <Select.Item label="Pending" value="pending" />
+                  <Select.Item label="Paid" value="paid" />
+                  <Select.Item label="Overdue" value="overdue" />
+                </Select>
+              </FormControl>
+            </Box>
 
-          {/* Filter */}
-          <View style={styles.filterContainer}>
-            <Text style={styles.filterLabel}>Filter:</Text>
-            <Picker
-              selectedValue={filterStatus}
-              style={styles.picker}
-              onValueChange={(value) => setFilterStatus(value as typeof filterStatus)}
-            >
-              <Picker.Item label="All" value="all" />
-              <Picker.Item label="Pending" value="pending" />
-              <Picker.Item label="Paid" value="paid" />
-              <Picker.Item label="Overdue" value="overdue" />
-            </Picker>
-          </View>
-
-          <FlatList
-            data={fees}
-            keyExtractor={(item) => item.id}
-            renderItem={renderFeeItem}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>No fees found</Text>
-            }
-          />
-        </View>
+            <FlatList
+              data={fees}
+              keyExtractor={(item) => item.id}
+              renderItem={renderFeeItem}
+              contentContainerStyle={{ padding: 12 }}
+              ListEmptyComponent={
+                <Text fontSize="md" color="gray.500" textAlign="center" py={5}>
+                  No fees found
+                </Text>
+              }
+            />
+          </VStack>
+        </Modal.Content>
       </Modal>
-    </View>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    backgroundColor: '#6200ea',
-    padding: 20,
-    paddingTop: 40,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 15,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    padding: 10,
-    gap: 10,
-    flexWrap: 'wrap',
-  },
-  actionButton: {
-    backgroundColor: '#6200ea',
-    padding: 12,
-    borderRadius: 8,
-    flex: 1,
-    minWidth: 100,
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#fff',
-    marginHorizontal: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  filterLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginRight: 10,
-  },
-  picker: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    padding: 10,
-    paddingTop: 15,
-  },
-  listContent: {
-    padding: 10,
-  },
-  feeCard: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  feeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  feeType: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  feeDescription: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  feeDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  feeAmount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#6200ea',
-  },
-  feeDueDate: {
-    fontSize: 14,
-    color: '#666',
-  },
-  feeUser: {
-    fontSize: 14,
-    color: '#666',
-  },
-  feeChild: {
-    fontSize: 14,
-    color: '#666',
-  },
-  deleteButton: {
-    backgroundColor: '#f44336',
-    padding: 8,
-    borderRadius: 4,
-    marginTop: 10,
-  },
-  deleteButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  templateList: {
-    padding: 10,
-  },
-  templateCard: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 8,
-    marginRight: 10,
-    width: 200,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  templateName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  templateType: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 5,
-  },
-  templateDescription: {
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  templateAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#6200ea',
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#666',
-    fontSize: 16,
-    padding: 20,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    width: '90%',
-    maxHeight: '80%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    marginTop: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
-  datePickerButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-  },
-  datePickerButtonText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-    gap: 10,
-  },
-  modalButton: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#999',
-  },
-  submitButton: {
-    backgroundColor: '#6200ea',
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  calendarModalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    width: '90%',
-    maxWidth: 400,
-  },
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  calendarNavButton: {
-    fontSize: 24,
-    color: '#6200ea',
-    fontWeight: 'bold',
-    padding: 10,
-  },
-  calendarMonthYear: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  calendarDaysHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 10,
-  },
-  calendarDayHeader: {
-    width: 40,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: 12,
-    color: '#666',
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  calendarDay: {
-    width: '14.28%',
-    aspectRatio: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 5,
-  },
-  selectedDay: {
-    backgroundColor: '#6200ea',
-    borderRadius: 20,
-  },
-  calendarDayText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  selectedDayText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  calendarCloseButton: {
-    backgroundColor: '#6200ea',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  calendarCloseButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  feesHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingTop: 15,
-  },
-  viewAllButton: {
-    backgroundColor: '#6200ea',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  viewAllButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  backButton: {
-    padding: 5,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-});

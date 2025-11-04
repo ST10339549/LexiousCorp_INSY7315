@@ -170,31 +170,40 @@ service cloud.firestore {
     /**
      * Orders collection: stores lunch orders
      * Structure: { 
-     *   parentId, 
+     *   userId, 
      *   childId, 
      *   weekOf, 
-     *   selections: [{ menuItemId, day, itemName }],
-     *   totalAmount,
-     *   status: 'pending' | 'confirmed' | 'cancelled',
-     *   createdAt,
-     *   updatedAt
+     *   selections: [{ day, itemId, qty }],
+     *   total,
+     *   status: 'pending' | 'paid' | 'cancelled',
+     *   createdAt
      * }
      */
     match /orders/{orderId} {
       // Admins and staff can read all orders
-      // Parents can read all orders (they will be filtered in the app by parentId)
+      // Parents can read all orders (they will be filtered in the app by userId)
       allow read: if isSignedIn();
       
       // Parents can create orders for themselves
-      allow create: if isParent() && request.resource.data.parentId == request.auth.uid;
+      allow create: if isParent() && request.resource.data.userId == request.auth.uid;
       
-      // Parents can update their own pending orders (but not the status field)
-      allow update: if (isParent() 
-                    && resource.data.parentId == request.auth.uid
-                    && resource.data.status == request.resource.data.status) || isAdminOrStaff();
+      // Parents can update their own orders
+      // They can change status from 'pending' to 'paid' during payment
+      // They can change status from 'pending' to 'cancelled' to cancel
+      // They cannot change status from 'paid' or back to 'pending'
+      allow update: if isParent() 
+                    && resource.data.userId == request.auth.uid
+                    && (
+                      // Allow changing non-status fields while status stays same
+                      (resource.data.status == request.resource.data.status)
+                      // Allow pending -> paid (payment)
+                      || (resource.data.status == 'pending' && request.resource.data.status == 'paid')
+                      // Allow pending -> cancelled (cancellation)
+                      || (resource.data.status == 'pending' && request.resource.data.status == 'cancelled')
+                    );
       
-      // Admins can update any order, including status changes
-      allow update: if isAdmin();
+      // Admins and staff can update any order
+      allow update: if isAdminOrStaff();
       
       // Only admins can delete orders
       allow delete: if isAdmin();
@@ -331,17 +340,25 @@ service cloud.firestore {
     
     /**
      * Receipts collection: stores receipt records
-     * This is an alias/alternative to payments for clarity
+     * Structure: { 
+     *   userId, 
+     *   orderIds, 
+     *   amount, 
+     *   txnId, 
+     *   paymentMethod, 
+     *   status, 
+     *   createdAt 
+     * }
      */
     match /receipts/{receiptId} {
-      // Parents can read their own receipts; admins can read all
-      allow read: if isAdmin() || isParent();
+      // Parents can read their own receipts; admins and staff can read all
+      allow read: if isAdminOrStaff() || (isParent() && resource.data.userId == request.auth.uid);
       
       // Parents can create receipts for themselves
-      allow create: if isParent();
+      allow create: if isParent() && request.resource.data.userId == request.auth.uid;
       
-      // Parents can update their own receipts; admins can update any
-      allow update: if isParent() || isAdmin();
+      // Only admins can update receipts
+      allow update: if isAdmin();
       
       // Only admins can delete receipts
       allow delete: if isAdmin();

@@ -143,7 +143,7 @@ export default function AdminDashboard({
                                 onPress={() => onNavigateToAttendance && onNavigateToAttendance()}
                                 _pressed={{ opacity: 0.7 }}
                             >
-                                <AppCard bg="success.500" h="110px">
+                                <AppCard bg="yellow.400" h="110px">
                                     <VStack space={2} alignItems="center" justifyContent="center" flex={1}>
                                         <Icon as={Ionicons} name="checkmark-circle" size={8} color="white" />
                                         <Text color="white" fontSize="sm" fontWeight="600" textAlign="center">
@@ -192,7 +192,7 @@ export default function AdminDashboard({
                                 onPress={() => onNavigateToCreateAnnouncement && onNavigateToCreateAnnouncement()}
                                 _pressed={{ opacity: 0.7 }}
                             >
-                                <AppCard bg="warning.500" h="110px">
+                                <AppCard bg="red.500" h="110px">
                                     <VStack space={2} alignItems="center" justifyContent="center" flex={1}>
                                         <Icon as={Ionicons} name="megaphone" size={8} color="white" />
                                         <Text color="white" fontSize="sm" fontWeight="600" textAlign="center">

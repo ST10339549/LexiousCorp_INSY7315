@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Little Lemon Creche App",
+    "name": "Creche Connect",
     "slug": "creche-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -34,7 +34,7 @@
       "icon": "./assets/icon.png",
       "color": "#7C3AED",
       "androidMode": "default",
-      "androidCollapsedTitle": "Creche App"
+      "androidCollapsedTitle": "Creche Connect"
     },
     "plugins": [
       [

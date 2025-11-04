@@ -87,7 +87,7 @@ export default function LoginScreen({
         
         <VStack space={1} alignItems="center">
           <Heading size="xl" color="gray.800" fontWeight="700">
-            Little Lemon Creche
+            Creche Connect
           </Heading>
           <Text color="gray.500" fontSize="md">
             Welcome back! Please sign in to continue

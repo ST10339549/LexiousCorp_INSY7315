@@ -122,7 +122,7 @@ export default function RegisterScreen({
               Create Account
             </Heading>
             <Text color="gray.500" fontSize="md" textAlign="center">
-              Join Little Lemon Creche
+              Join Creche Connect
             </Text>
           </VStack>
         </VStack>

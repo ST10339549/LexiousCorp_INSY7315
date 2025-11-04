@@ -125,13 +125,13 @@ export default function ReceiptsScreen({
   const getStatusIcon = (status: Receipt['status']): string => {
     switch (status) {
       case 'success':
-        return 'check-circle';
+        return 'checkmark-circle';
       case 'failed':
-        return 'error';
+        return 'close-circle';
       case 'pending':
-        return 'pending';
+        return 'time';
       default:
-        return 'help';
+        return 'help-circle';
     }
   };
 
@@ -158,7 +158,7 @@ export default function ReceiptsScreen({
                     as={Ionicons}
                     name="receipt"
                     size="sm"
-                    color="brand.400"
+                    color="primary.400"
                   />
                   <Text color="gray.600" fontSize="xs" fontWeight="600">
                     Receipt #{receipt.id.substring(0, 8)}
@@ -178,10 +178,10 @@ export default function ReceiptsScreen({
                   <Icon
                     as={Ionicons}
                     name={getStatusIcon(receipt.status)}
-                    color="gray.800"
+                    color="white"
                     size="xs"
                   />
-                  <Text color="gray.800" fontSize="xs" fontWeight="600">
+                  <Text color="white" fontSize="xs" fontWeight="600">
                     {receipt.status.toUpperCase()}
                   </Text>
                 </HStack>
@@ -229,16 +229,16 @@ export default function ReceiptsScreen({
               borderColor="primary.400"
               size="sm"
               onPress={() => openReceiptDetail(receipt)}
-              _pressed={{ bg: 'primary.900' }}
+              _pressed={{ bg: 'primary.50' }}
             >
               <HStack space={2} alignItems="center">
-                <Text color="primary.400" fontSize="xs" fontWeight="600">
+                <Text color="primary.600" fontSize="xs" fontWeight="600">
                   View Details
                 </Text>
                 <Icon
                   as={Ionicons}
                   name="arrow-forward"
-                  color="brand.400"
+                  color="primary.600"
                   size="xs"
                 />
               </HStack>
@@ -294,7 +294,7 @@ export default function ReceiptsScreen({
                     <Text color="gray.500" fontSize="xs" fontWeight="600">
                       AMOUNT
                     </Text>
-                    <Text color="brand.400" fontSize="2xl" fontWeight="bold">
+                    <Text color="primary.600" fontSize="2xl" fontWeight="bold">
                       R{selectedReceipt.amount.toFixed(2)}
                     </Text>
                   </VStack>
@@ -315,10 +315,10 @@ export default function ReceiptsScreen({
                         <Icon
                           as={Ionicons}
                           name={getStatusIcon(selectedReceipt.status)}
-                          color="gray.800"
+                          color="white"
                           size="xs"
                         />
-                        <Text color="gray.800" fontSize="xs" fontWeight="600">
+                        <Text color="white" fontSize="xs" fontWeight="600">
                           {selectedReceipt.status.toUpperCase()}
                         </Text>
                       </HStack>
@@ -404,10 +404,10 @@ export default function ReceiptsScreen({
               )}
 
               {/* Info Notice */}
-              <Box bg="blue.900" p={3} rounded="lg" borderWidth={1} borderColor="blue.600">
+              <Box bg="blue.50" p={3} rounded="lg" borderWidth={1} borderColor="blue.200">
                 <HStack space={2} alignItems="center">
-                  <Icon as={Ionicons} name="info" color="blue.400" size="sm" />
-                  <Text color="blue.200" fontSize="xs" flex={1}>
+                  <Icon as={Ionicons} name="information-circle" color="blue.600" size="sm" />
+                  <Text color="blue.700" fontSize="xs" flex={1}>
                     Keep this receipt for your records. This is a mock payment for demonstration purposes.
                   </Text>
                 </HStack>
@@ -422,7 +422,7 @@ export default function ReceiptsScreen({
               onPress={closeReceiptDetail}
               _pressed={{ bg: 'primary.500' }}
             >
-              <Text color="gray.800" fontWeight="600">
+              <Text color="white" fontWeight="600">
                 Close
               </Text>
             </Button>
@@ -433,7 +433,7 @@ export default function ReceiptsScreen({
   };
 
   return (
-    <Box flex={1} bg="bg.900" safeArea>
+    <Box flex={1} bg="#F7F9FC" safeArea>
       {/* Header */}
       <HStack
         px={6}
@@ -442,13 +442,13 @@ export default function ReceiptsScreen({
         alignItems="center"
         space={3}
         borderBottomWidth={1}
-        borderBottomColor="coolGray.700"
+        borderBottomColor="gray.200"
       >
         <Button
           variant="ghost"
           onPress={onNavigateBack}
           leftIcon={<Icon as={Ionicons} name="arrow-back" size="md" color="gray.800" />}
-          _pressed={{ bg: 'coolGray.700' }}
+          _pressed={{ bg: 'gray.100' }}
         >
           <Text color="gray.800" fontSize="md">
             Back
@@ -515,7 +515,7 @@ export default function ReceiptsScreen({
                   {receipts.length} receipt{receipts.length !== 1 ? 's' : ''} found
                 </Text>
                 <Badge bg="primary.500" rounded="full" px={3} py={1}>
-                  <Text color="gray.800" fontSize="xs" fontWeight="600">
+                  <Text color="white" fontSize="xs" fontWeight="600">
                     Total: R{receipts.reduce((sum, r) => sum + r.amount, 0).toFixed(2)}
                   </Text>
                 </Badge>

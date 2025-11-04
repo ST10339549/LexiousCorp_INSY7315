@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { BackHandler, Alert } from 'react-native';
 import {
-  View,
+  Box,
+  VStack,
+  HStack,
   Text,
-  StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
+  Button,
+  Spinner,
   Modal,
-  BackHandler,
-  SafeAreaView,
-} from 'react-native';
+  Pressable,
+} from 'native-base';
+import { Ionicons } from '@expo/vector-icons';
 import { fetchChildrenOnce, Child } from '../services/children';
 import {
   getActiveMenuForWeek,
@@ -97,7 +98,7 @@ export default function LunchOrderScreen({ userId, onNavigateBack }: LunchOrderS
     try {
       const menuData = await getActiveMenuForWeek(selectedWeek);
       setMenu(menuData);
-      setSelections([]); // Reset selections when changing weeks
+      setSelections([]);
     } catch (error) {
       console.error('Error loading menu:', error);
       Alert.alert('Error', 'Failed to load menu');
@@ -184,7 +185,6 @@ export default function LunchOrderScreen({ userId, onNavigateBack }: LunchOrderS
       return;
     }
 
-    // Check if order already exists for this child and week
     const existingOrder = orderHistory.find(
       (order) =>
         order.childId === selectedChildId &&
@@ -257,7 +257,6 @@ export default function LunchOrderScreen({ userId, onNavigateBack }: LunchOrderS
   const handleOrderClick = async (order: Order) => {
     setSelectedOrder(order);
     
-    // Fetch menu items for this order's week
     try {
       const orderMenu = await getActiveMenuForWeek(order.weekOf);
       if (orderMenu) {
@@ -272,828 +271,412 @@ export default function LunchOrderScreen({ userId, onNavigateBack }: LunchOrderS
     }
   };
 
-  if (children.length === 0) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.noChildrenText}>
-          You need to add a child before ordering lunch
-        </Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => onNavigateBack && onNavigateBack()}
-        >
-          <Text style={styles.buttonText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   const getSelectedChildName = () => {
     const child = children.find((c) => c.id === selectedChildId);
     return child?.name || 'Select Child';
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return 'success.600';
+      case 'pending': return 'warning.600';
+      case 'cancelled': return 'danger.600';
+      default: return 'gray.600';
+    }
+  };
+
+  if (children.length === 0) {
+    return (
+      <Box flex={1} bg="#F7F9FC" justifyContent="center" alignItems="center" p={5} safeArea>
+        <Text fontSize="md" color="gray.600" textAlign="center" mb={5}>
+          You need to add a child before ordering lunch
+        </Text>
+        <Button
+          bg="primary.400"
+          _pressed={{ bg: 'primary.500' }}
+          onPress={() => onNavigateBack && onNavigateBack()}
+        >
+          <Text color="white" fontWeight="semibold">Go Back</Text>
+        </Button>
+      </Box>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <Box flex={1} bg="#F7F9FC" safeArea>
       {/* Order Details Modal */}
-      <Modal
-        visible={selectedOrder !== null}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setSelectedOrder(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Order Receipt</Text>
+      <Modal isOpen={selectedOrder !== null} onClose={() => setSelectedOrder(null)}>
+        <Modal.Content maxWidth="400px" maxHeight="80%" bg="white">
+          <Modal.CloseButton />
+          <Modal.Header bg="white" borderBottomWidth={1} borderBottomColor="gray.200">
+            <Text fontSize="lg" fontWeight="bold" color="gray.800">Order Receipt</Text>
+          </Modal.Header>
+          <Modal.Body bg="white">
             {selectedOrder && (
-              <ScrollView style={styles.receiptScroll}>
-                <View style={styles.receiptHeader}>
-                  <Text style={styles.receiptTitle}>Week of {formatWeekString(selectedOrder.weekOf)}</Text>
-                  <Text style={styles.receiptChild}>Child: {getChildName(selectedOrder.childId)}</Text>
-                  <Text style={styles.receiptDate}>Placed: {selectedOrder.createdAt.toLocaleDateString()}</Text>
-                  <Text style={[
-                    styles.receiptStatus,
-                    selectedOrder.status === 'paid' && styles.statusPaid,
-                    selectedOrder.status === 'pending' && { color: '#FF9500' },
-                    selectedOrder.status === 'cancelled' && styles.statusCancelled,
-                  ]}>
-                    Status: {selectedOrder.status.toUpperCase()}
-                  </Text>
-                </View>
+              <ScrollView>
+                <VStack space={3}>
+                  {/* Receipt Header */}
+                  <Box bg="gray.50" p={4} borderRadius="md">
+                    <Text fontSize="md" fontWeight="bold" color="gray.800" mb={2}>
+                      Week of {formatWeekString(selectedOrder.weekOf)}
+                    </Text>
+                    <Text fontSize="sm" color="gray.600" mb={1}>
+                      Child: {getChildName(selectedOrder.childId)}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500" mb={1}>
+                      Placed: {selectedOrder.createdAt.toLocaleDateString()}
+                    </Text>
+                    <Text fontSize="sm" fontWeight="semibold" color={getStatusColor(selectedOrder.status)} mt={1}>
+                      Status: {selectedOrder.status.toUpperCase()}
+                    </Text>
+                  </Box>
 
-                <View style={styles.divider} />
-
-                <Text style={styles.receiptSectionTitle}>Order Items:</Text>
-                {selectedOrder.selections.map((sel, index) => {
-                  const menuItem = orderMenuItems[sel.itemId];
-                  return (
-                    <View key={index} style={styles.receiptItem}>
-                      <View style={styles.receiptItemHeader}>
-                        <Text style={styles.receiptDay}>{sel.day}</Text>
-                        <Text style={styles.receiptQty}>Qty: {sel.qty}</Text>
-                      </View>
-                      <Text style={styles.receiptItemName}>
-                        {menuItem?.name || 'Item unavailable'}
-                      </Text>
-                      {menuItem && (
-                        <Text style={styles.receiptItemPrice}>
-                          R{menuItem.price.toFixed(2)} × {sel.qty} = R{(menuItem.price * sel.qty).toFixed(2)}
+                  {/* Order Items */}
+                  <Text fontSize="md" fontWeight="bold" color="gray.800">Order Items:</Text>
+                  {selectedOrder.selections.map((sel, index) => {
+                    const menuItem = orderMenuItems[sel.itemId];
+                    return (
+                      <Box key={index} bg="gray.50" p={3} borderRadius="md">
+                        <HStack justifyContent="space-between" mb={2}>
+                          <Text fontSize="sm" fontWeight="bold" color="primary.600">{sel.day}</Text>
+                          <Text fontSize="xs" color="gray.600" fontWeight="semibold">Qty: {sel.qty}</Text>
+                        </HStack>
+                        <Text fontSize="sm" fontWeight="semibold" color="gray.800" mb={1}>
+                          {menuItem?.name || 'Item unavailable'}
                         </Text>
-                      )}
-                    </View>
-                  );
-                })}
+                        {menuItem && (
+                          <Text fontSize="xs" color="gray.600">
+                            R{menuItem.price.toFixed(2)} × {sel.qty} = R{(menuItem.price * sel.qty).toFixed(2)}
+                          </Text>
+                        )}
+                      </Box>
+                    );
+                  })}
 
-                <View style={styles.divider} />
-
-                <View style={styles.receiptTotal}>
-                  <Text style={styles.receiptTotalLabel}>Total Amount:</Text>
-                  <Text style={styles.receiptTotalAmount}>R{selectedOrder.total.toFixed(2)}</Text>
-                </View>
+                  {/* Total */}
+                  <Box bg="primary.50" p={4} borderRadius="md">
+                    <HStack justifyContent="space-between" alignItems="center">
+                      <Text fontSize="md" fontWeight="bold" color="gray.800">Total Amount:</Text>
+                      <Text fontSize="xl" fontWeight="bold" color="primary.600">
+                        R{selectedOrder.total.toFixed(2)}
+                      </Text>
+                    </HStack>
+                  </Box>
+                </VStack>
               </ScrollView>
             )}
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setSelectedOrder(null)}
-            >
-              <Text style={styles.modalCloseButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          </Modal.Body>
+          <Modal.Footer bg="white" borderTopWidth={1} borderTopColor="gray.200">
+            <Button variant="ghost" onPress={() => setSelectedOrder(null)}>
+              <Text color="gray.600" fontWeight="semibold">Close</Text>
+            </Button>
+          </Modal.Footer>
+        </Modal.Content>
       </Modal>
 
       {/* Child Picker Modal */}
-      <Modal
-        visible={showChildPicker}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowChildPicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Child</Text>
-            <ScrollView>
+      <Modal isOpen={showChildPicker} onClose={() => setShowChildPicker(false)}>
+        <Modal.Content maxWidth="400px" bg="white">
+          <Modal.CloseButton />
+          <Modal.Header bg="white" borderBottomWidth={1} borderBottomColor="gray.200">
+            <Text fontSize="lg" fontWeight="bold" color="gray.800">Select Child</Text>
+          </Modal.Header>
+          <Modal.Body bg="white">
+            <VStack space={2}>
               {children.map((child) => (
-                <TouchableOpacity
+                <Pressable
                   key={child.id}
-                  style={[
-                    styles.childOption,
-                    selectedChildId === child.id && styles.childOptionSelected,
-                  ]}
+                  bg={selectedChildId === child.id ? 'primary.50' : 'white'}
+                  borderWidth={selectedChildId === child.id ? 2 : 1}
+                  borderColor={selectedChildId === child.id ? 'primary.400' : 'gray.200'}
+                  borderRadius="md"
+                  p={4}
                   onPress={() => {
                     setSelectedChildId(child.id);
                     setShowChildPicker(false);
                   }}
                 >
                   <Text
-                    style={[
-                      styles.childOptionText,
-                      selectedChildId === child.id && styles.childOptionTextSelected,
-                    ]}
+                    fontSize="md"
+                    fontWeight={selectedChildId === child.id ? 'bold' : 'normal'}
+                    color={selectedChildId === child.id ? 'primary.600' : 'gray.800'}
                   >
                     {child.name}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
-            </ScrollView>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setShowChildPicker(false)}
-            >
-              <Text style={styles.modalCloseButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            </VStack>
+          </Modal.Body>
+          <Modal.Footer bg="white" borderTopWidth={1} borderTopColor="gray.200">
+            <Button variant="ghost" onPress={() => setShowChildPicker(false)}>
+              <Text color="gray.600" fontWeight="semibold">Close</Text>
+            </Button>
+          </Modal.Footer>
+        </Modal.Content>
       </Modal>
 
-      <View style={styles.header}>
-        <Text style={styles.title}>Lunch Orders</Text>
-      </View>
+      {/* Header */}
+      <Box bg="white" px={5} py={4} borderBottomWidth={1} borderBottomColor="gray.200">
+        <Text fontSize="2xl" fontWeight="bold" color="gray.800" textAlign="center">
+          Lunch Orders
+        </Text>
+      </Box>
 
-      <View style={styles.subHeader}>
-        <TouchableOpacity
-          style={styles.historyButton}
+      {/* Toggle Button */}
+      <Box bg="white" px={4} py={3} borderBottomWidth={1} borderBottomColor="gray.200" alignItems="center">
+        <Button
+          bg="primary.400"
+          _pressed={{ bg: 'primary.500' }}
+          borderRadius="full"
+          px={4}
+          py={2}
           onPress={() => setShowHistory(!showHistory)}
+          leftIcon={<Ionicons name={showHistory ? 'add-circle-outline' : 'receipt-outline'} size={18} color="white" />}
         >
-          <Text style={styles.historyButtonText}>
-            {showHistory ? '📋 New Order' : '📜 Order History'}
+          <Text color="white" fontWeight="semibold" fontSize="sm">
+            {showHistory ? 'New Order' : 'Order History'}
           </Text>
-        </TouchableOpacity>
-      </View>
+        </Button>
+      </Box>
 
       {showHistory ? (
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <Text style={styles.sectionTitle}>Order History</Text>
-          {orderHistory.length === 0 ? (
-            <Text style={styles.noOrdersText}>No orders yet</Text>
-          ) : (
-            orderHistory.map((order) => (
-              <TouchableOpacity 
-                key={order.id} 
-                style={styles.orderCard}
-                onPress={() => handleOrderClick(order)}
-              >
-                <Text style={styles.orderWeek}>
-                  Week of {formatWeekString(order.weekOf)}
-                </Text>
-                <Text style={styles.orderChild}>
-                  Child: {getChildName(order.childId)}
-                </Text>
-                <Text style={styles.orderTotal}>
-                  Total: R{order.total.toFixed(2)}
-                </Text>
-                <Text
-                  style={[
-                    styles.orderStatus,
-                    order.status === 'paid' && styles.statusPaid,
-                    order.status === 'cancelled' && styles.statusCancelled,
-                  ]}
+        <ScrollView flex={1} bg="#F7F9FC">
+          <VStack space={3} px={3} py={3}>
+            <Text fontSize="lg" fontWeight="bold" color="gray.800" px={1}>Order History</Text>
+            {orderHistory.length === 0 ? (
+              <Text fontSize="md" color="gray.500" textAlign="center" mt={5} fontStyle="italic">
+                No orders yet
+              </Text>
+            ) : (
+              orderHistory.map((order) => (
+                <Pressable
+                  key={order.id}
+                  bg="white"
+                  borderRadius="lg"
+                  p={4}
+                  shadow={1}
+                  borderWidth={1}
+                  borderColor="gray.200"
+                  onPress={() => handleOrderClick(order)}
                 >
-                  Status: {order.status.toUpperCase()}
-                </Text>
-                <Text style={styles.orderDate}>
-                  Placed: {order.createdAt.toLocaleDateString()}
-                </Text>
-                <Text style={styles.tapToView}>Tap to view receipt</Text>
-              </TouchableOpacity>
-            ))
-          )}
+                  <VStack space={2}>
+                    <Text fontSize="md" fontWeight="bold" color="gray.800">
+                      Week of {formatWeekString(order.weekOf)}
+                    </Text>
+                    <Text fontSize="sm" color="gray.600">
+                      Child: {getChildName(order.childId)}
+                    </Text>
+                    <Text fontSize="md" fontWeight="semibold" color="primary.600">
+                      Total: R{order.total.toFixed(2)}
+                    </Text>
+                    <Text fontSize="sm" fontWeight="semibold" color={getStatusColor(order.status)}>
+                      Status: {order.status.toUpperCase()}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      Placed: {order.createdAt.toLocaleDateString()}
+                    </Text>
+                    <Text fontSize="xs" color="primary.600" fontStyle="italic" mt={1}>
+                      Tap to view receipt
+                    </Text>
+                  </VStack>
+                </Pressable>
+              ))
+            )}
+          </VStack>
         </ScrollView>
       ) : (
         <>
-          <View style={styles.orderForm}>
-            <View style={styles.pickerContainer}>
-              <Text style={styles.label}>Select Child:</Text>
-              <TouchableOpacity
-                style={styles.pickerButton}
-                onPress={() => setShowChildPicker(true)}
-              >
-                <Text style={styles.pickerButtonText}>{getSelectedChildName()}</Text>
-                <Text style={styles.pickerArrow}>▼</Text>
-              </TouchableOpacity>
-            </View>
+          {/* Order Form */}
+          <Box bg="white" px={4} py={3} borderBottomWidth={1} borderBottomColor="gray.200">
+            <VStack space={3}>
+              {/* Child Picker */}
+              <Box>
+                <Text fontSize="sm" fontWeight="semibold" color="gray.700" mb={2}>
+                  Select Child:
+                </Text>
+                <Pressable
+                  bg="white"
+                  borderWidth={1}
+                  borderColor="gray.300"
+                  borderRadius="md"
+                  p={3}
+                  onPress={() => setShowChildPicker(true)}
+                >
+                  <HStack justifyContent="space-between" alignItems="center">
+                    <Text fontSize="md" color="gray.800">{getSelectedChildName()}</Text>
+                    <Ionicons name="chevron-down-outline" size={20} color="#718096" />
+                  </HStack>
+                </Pressable>
+              </Box>
 
-            <View style={styles.weekSelector}>
-              <TouchableOpacity
-                style={styles.weekButton}
-                onPress={() => changeWeek(-1)}
-              >
-                <Text style={styles.weekButtonText}>← Prev</Text>
-              </TouchableOpacity>
+              {/* Week Selector */}
+              <HStack justifyContent="space-between" alignItems="center">
+                <Button
+                  size="sm"
+                  bg="primary.400"
+                  _pressed={{ bg: 'primary.500' }}
+                  onPress={() => changeWeek(-1)}
+                  leftIcon={<Ionicons name="chevron-back-outline" size={16} color="white" />}
+                >
+                  <Text color="white" fontWeight="semibold" fontSize="sm">Prev</Text>
+                </Button>
 
-              <Text style={styles.weekText}>
-                {formatWeekString(selectedWeek)}
-              </Text>
+                <Text fontSize="md" fontWeight="semibold" color="gray.800">
+                  {formatWeekString(selectedWeek)}
+                </Text>
 
-              <TouchableOpacity
-                style={styles.weekButton}
-                onPress={() => changeWeek(1)}
-              >
-                <Text style={styles.weekButtonText}>Next →</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                <Button
+                  size="sm"
+                  bg="primary.400"
+                  _pressed={{ bg: 'primary.500' }}
+                  onPress={() => changeWeek(1)}
+                  rightIcon={<Ionicons name="chevron-forward-outline" size={16} color="white" />}
+                >
+                  <Text color="white" fontWeight="semibold" fontSize="sm">Next</Text>
+                </Button>
+              </HStack>
+            </VStack>
+          </Box>
 
           {loading ? (
-            <View style={styles.centered}>
-              <ActivityIndicator size="large" color="#007AFF" />
-            </View>
+            <Box flex={1} justifyContent="center" alignItems="center">
+              <Spinner size="lg" color="primary.400" />
+            </Box>
           ) : !menu ? (
-            <View style={styles.centered}>
-              <Text style={styles.noMenuText}>
+            <Box flex={1} justifyContent="center" alignItems="center" p={5}>
+              <Text fontSize="md" color="gray.500" textAlign="center">
                 No menu available for this week
               </Text>
-            </View>
+            </Box>
           ) : (
             <>
-              <ScrollView 
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-              >
-                {(['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] as DayOfWeek[]).map(
-                  (day) => {
+              <ScrollView flex={1} bg="#F7F9FC">
+                <VStack space={3} px={3} py={3}>
+                  {(['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] as DayOfWeek[]).map((day) => {
                     const dayItems = getItemsForDay(day);
                     const daySelections = getSelectionsForDay(day);
 
                     return (
-                      <View key={day} style={styles.daySection}>
-                        <Text style={styles.dayTitle}>{day}</Text>
+                      <Box
+                        key={day}
+                        bg="white"
+                        borderRadius="lg"
+                        p={4}
+                        shadow={1}
+                        borderWidth={1}
+                        borderColor="gray.200"
+                      >
+                        <Text fontSize="lg" fontWeight="bold" color="gray.800" mb={3}>
+                          {day}
+                        </Text>
 
                         {dayItems.length === 0 ? (
-                          <Text style={styles.noItemsText}>
+                          <Text fontSize="sm" color="gray.500" fontStyle="italic" textAlign="center">
                             No items available
                           </Text>
                         ) : (
-                          dayItems.map((item) => {
-                            const selection = daySelections.find(
-                              (s) => s.itemId === item.id
-                            );
+                          <VStack space={3}>
+                            {dayItems.map((item) => {
+                              const selection = daySelections.find((s) => s.itemId === item.id);
 
-                            return (
-                              <View key={item.id} style={styles.menuItem}>
-                                <View style={styles.itemInfo}>
-                                  <Text style={styles.itemName}>
-                                    {item.name}
-                                  </Text>
-                                  <Text style={styles.itemPrice}>
-                                    R{item.price.toFixed(2)}
-                                  </Text>
-                                  {item.allergens &&
-                                    item.allergens.length > 0 && (
-                                      <Text style={styles.allergens}>
-                                        Allergens: {item.allergens.join(', ')}
+                              return (
+                                <Box
+                                  key={item.id}
+                                  borderBottomWidth={1}
+                                  borderBottomColor="gray.100"
+                                  pb={3}
+                                >
+                                  <HStack justifyContent="space-between" alignItems="center">
+                                    <VStack flex={1} mr={3}>
+                                      <Text fontSize="md" fontWeight="semibold" color="gray.800" mb={1}>
+                                        {item.name}
                                       </Text>
+                                      <Text fontSize="sm" color="gray.600" mb={1}>
+                                        R{item.price.toFixed(2)}
+                                      </Text>
+                                      {item.allergens && item.allergens.length > 0 && (
+                                        <Text fontSize="xs" color="danger.600" fontStyle="italic">
+                                          Allergens: {item.allergens.join(', ')}
+                                        </Text>
+                                      )}
+                                    </VStack>
+
+                                    {selection ? (
+                                      <HStack space={3} alignItems="center">
+                                        <Pressable
+                                          bg="primary.400"
+                                          w={8}
+                                          h={8}
+                                          borderRadius="full"
+                                          justifyContent="center"
+                                          alignItems="center"
+                                          onPress={() => updateQuantity(item.id, day, selection.qty - 1)}
+                                        >
+                                          <Text color="white" fontSize="lg" fontWeight="bold">-</Text>
+                                        </Pressable>
+                                        <Text fontSize="md" fontWeight="semibold" color="gray.800" minW={8} textAlign="center">
+                                          {selection.qty}
+                                        </Text>
+                                        <Pressable
+                                          bg="primary.400"
+                                          w={8}
+                                          h={8}
+                                          borderRadius="full"
+                                          justifyContent="center"
+                                          alignItems="center"
+                                          onPress={() => updateQuantity(item.id, day, selection.qty + 1)}
+                                        >
+                                          <Text color="white" fontSize="lg" fontWeight="bold">+</Text>
+                                        </Pressable>
+                                      </HStack>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        bg="success.500"
+                                        _pressed={{ bg: 'success.600' }}
+                                        onPress={() => addToSelection(item)}
+                                      >
+                                        <Text color="white" fontWeight="semibold" fontSize="sm">Add</Text>
+                                      </Button>
                                     )}
-                                </View>
-
-                                {selection ? (
-                                  <View style={styles.quantityControl}>
-                                    <TouchableOpacity
-                                      style={styles.qtyButton}
-                                      onPress={() =>
-                                        updateQuantity(
-                                          item.id,
-                                          day,
-                                          selection.qty - 1
-                                        )
-                                      }
-                                    >
-                                      <Text style={styles.qtyButtonText}>
-                                        -
-                                      </Text>
-                                    </TouchableOpacity>
-                                    <Text style={styles.qtyText}>
-                                      {selection.qty}
-                                    </Text>
-                                    <TouchableOpacity
-                                      style={styles.qtyButton}
-                                      onPress={() =>
-                                        updateQuantity(
-                                          item.id,
-                                          day,
-                                          selection.qty + 1
-                                        )
-                                      }
-                                    >
-                                      <Text style={styles.qtyButtonText}>
-                                        +
-                                      </Text>
-                                    </TouchableOpacity>
-                                  </View>
-                                ) : (
-                                  <TouchableOpacity
-                                    style={styles.addButton}
-                                    onPress={() => addToSelection(item)}
-                                  >
-                                    <Text style={styles.addButtonText}>
-                                      Add
-                                    </Text>
-                                  </TouchableOpacity>
-                                )}
-                              </View>
-                            );
-                          })
+                                  </HStack>
+                                </Box>
+                              );
+                            })}
+                          </VStack>
                         )}
-                      </View>
+                      </Box>
                     );
-                  }
-                )}
+                  })}
+                </VStack>
               </ScrollView>
 
-              <View style={styles.footer}>
-                <View style={styles.totalContainer}>
-                  <Text style={styles.totalLabel}>Total:</Text>
-                  <Text style={styles.totalAmount}>
+              {/* Footer */}
+              <Box bg="white" p={4} borderTopWidth={1} borderTopColor="gray.300" shadow={3}>
+                <HStack justifyContent="space-between" alignItems="center" mb={4}>
+                  <Text fontSize="xl" fontWeight="bold" color="gray.800">Total:</Text>
+                  <Text fontSize="2xl" fontWeight="bold" color="primary.600">
                     R{calculateTotal().toFixed(2)}
                   </Text>
-                </View>
+                </HStack>
 
-                <TouchableOpacity
-                  style={[
-                    styles.submitButton,
-                    (submitting || selections.length === 0) &&
-                      styles.submitButtonDisabled,
-                  ]}
+                <Button
+                  bg={submitting || selections.length === 0 ? 'gray.400' : 'primary.400'}
+                  _pressed={{ bg: 'primary.500' }}
+                  py={4}
+                  borderRadius="md"
                   onPress={submitOrder}
-                  disabled={submitting || selections.length === 0}
+                  isDisabled={submitting || selections.length === 0}
+                  isLoading={submitting}
+                  isLoadingText="Placing Order..."
                 >
-                  {submitting ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.submitButtonText}>Place Order</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
+                  <Text color="white" fontSize="lg" fontWeight="bold">Place Order</Text>
+                </Button>
+              </Box>
             </>
           )}
         </>
       )}
-      </View>
-    </SafeAreaView>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#007AFF',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  header: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  subHeader: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    alignItems: 'center',
-  },
-  historyButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-  },
-  historyButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  orderForm: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  pickerContainer: {
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 6,
-    color: '#333',
-  },
-  pickerButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  pickerButtonText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  pickerArrow: {
-    fontSize: 12,
-    color: '#666',
-  },
-  picker: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 5,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    width: '85%',
-    maxHeight: '70%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-    color: '#333',
-  },
-  childOption: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
-    borderRadius: 6,
-    marginBottom: 4,
-  },
-  childOptionSelected: {
-    backgroundColor: '#007AFF15',
-    borderColor: '#007AFF',
-    borderWidth: 2,
-  },
-  childOptionText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  childOptionTextSelected: {
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  modalCloseButton: {
-    marginTop: 16,
-    paddingVertical: 12,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalCloseButtonText: {
-    color: '#666',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  weekSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  weekButton: {
-    backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 5,
-  },
-  weekButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  weekText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    margin: 16,
-    marginBottom: 8,
-    color: '#333',
-  },
-  daySection: {
-    backgroundColor: '#fff',
-    marginTop: 10,
-    marginHorizontal: 12,
-    marginBottom: 4,
-    padding: 14,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  dayTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  noItemsText: {
-    color: '#999',
-    fontStyle: 'italic',
-    textAlign: 'center',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  itemPrice: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
-  },
-  allergens: {
-    fontSize: 12,
-    color: '#FF3B30',
-    fontStyle: 'italic',
-  },
-  addButton: {
-    backgroundColor: '#34C759',
-    padding: 8,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  quantityControl: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  qtyButton: {
-    backgroundColor: '#007AFF',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  qtyButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  qtyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginHorizontal: 15,
-    minWidth: 30,
-    textAlign: 'center',
-  },
-  footer: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-  },
-  totalContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  totalLabel: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  totalAmount: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-  submitButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#999',
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  noChildrenText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  noMenuText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  noOrdersText: {
-    fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
-    marginTop: 20,
-    fontStyle: 'italic',
-  },
-  orderCard: {
-    backgroundColor: '#fff',
-    marginHorizontal: 12,
-    marginTop: 10,
-    marginBottom: 4,
-    padding: 16,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  orderWeek: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  orderChild: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 3,
-  },
-  orderTotal: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#007AFF',
-    marginBottom: 3,
-  },
-  orderStatus: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 3,
-    color: '#FF9500',
-  },
-  statusPaid: {
-    color: '#34C759',
-  },
-  statusCancelled: {
-    color: '#FF3B30',
-  },
-  orderDate: {
-    fontSize: 12,
-    color: '#999',
-  },
-  tapToView: {
-    fontSize: 12,
-    color: '#007AFF',
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  receiptScroll: {
-    maxHeight: 400,
-  },
-  receiptHeader: {
-    marginBottom: 16,
-  },
-  receiptTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-  },
-  receiptChild: {
-    fontSize: 15,
-    marginBottom: 4,
-    color: '#666',
-  },
-  receiptDate: {
-    fontSize: 13,
-    marginBottom: 4,
-    color: '#999',
-  },
-  receiptStatus: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#e0e0e0',
-    marginVertical: 12,
-  },
-  receiptSectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
-  },
-  receiptItem: {
-    backgroundColor: '#f8f9fa',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  receiptItemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  receiptDay: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#007AFF',
-  },
-  receiptQty: {
-    fontSize: 13,
-    color: '#666',
-    fontWeight: '600',
-  },
-  receiptItemName: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 4,
-    color: '#333',
-  },
-  receiptItemPrice: {
-    fontSize: 13,
-    color: '#666',
-  },
-  receiptTotal: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#007AFF10',
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  receiptTotalLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  receiptTotalAmount: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-});
