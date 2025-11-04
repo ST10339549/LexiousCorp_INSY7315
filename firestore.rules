@@ -389,6 +389,39 @@ service cloud.firestore {
     
     
     // ============================================
+    // NOTIFICATIONS COLLECTION
+    // ============================================
+    
+    /**
+     * Notifications collection: stores in-app notifications for parents
+     * Structure: { 
+     *   parentId,
+     *   childId,
+     *   childName,
+     *   type (absence_alert, attendance_reminder, pickup, emergency, general),
+     *   title,
+     *   message,
+     *   date,
+     *   timestamp,
+     *   read
+     * }
+     */
+    match /notifications/{notificationId} {
+      // Parents can read their own notifications; admins and staff can read all
+      allow read: if isAdminOrStaff() || (isParent() && resource.data.parentId == request.auth.uid);
+      
+      // Admin and staff can create notifications
+      allow create: if isAdminOrStaff();
+      
+      // Admin and staff can update notifications; parents can update their own (to mark as read)
+      allow update: if isAdminOrStaff() || (isParent() && resource.data.parentId == request.auth.uid);
+      
+      // Admin and staff can delete notifications
+      allow delete: if isAdminOrStaff();
+    }
+    
+    
+    // ============================================
     // DEFAULT DENY
     // ============================================
     

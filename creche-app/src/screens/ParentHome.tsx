@@ -11,12 +11,18 @@ import {
   Divider,
   useToast,
   Pressable,
+  IconButton,
 } from "native-base";
 import { Ionicons } from "@expo/vector-icons";
 import { signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { listenChildrenByParent, Child } from "../services/children";
 import { subscribeAnnouncements, Announcement } from "../services/announcements";
+import { 
+  listenParentNotifications, 
+  markNotificationAsRead, 
+  Notification 
+} from "../services/notifications";
 import { AppCard, AppButton } from "../components/shared";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -50,6 +56,10 @@ export default function ParentHome({
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
+  
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+  
   const toast = useToast();
 
   const handleLogout = async () => {
@@ -115,6 +125,62 @@ export default function ParentHome({
       unsubscribe();
     };
   }, []);
+
+  /**
+   * Subscribe to notifications updates
+   */
+  useEffect(() => {
+    if (!userId) {
+      setLoadingNotifications(false);
+      return;
+    }
+
+    console.log("[ParentHome] Setting up notifications subscription");
+
+    const unsubscribe = listenParentNotifications(userId, (updatedNotifications) => {
+      console.log(`[ParentHome] Received ${updatedNotifications.length} notifications`);
+      console.log('[ParentHome] All notifications:', updatedNotifications.map(n => ({ 
+        id: n.id, 
+        childName: n.childName, 
+        read: n.read,
+        timestamp: n.timestamp 
+      })));
+      // Only show latest 5 unread notifications
+      const unreadNotifications = updatedNotifications.filter((n) => !n.read).slice(0, 5);
+      console.log(`[ParentHome] Showing ${unreadNotifications.length} unread notifications`);
+      setNotifications(unreadNotifications);
+      setLoadingNotifications(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log("[ParentHome] Cleaning up notifications subscription");
+      unsubscribe();
+    };
+  }, [userId]);
+
+  /**
+   * Handle notification dismiss (mark as read)
+   */
+  const handleDismissNotification = async (notificationId: string) => {
+    try {
+      await markNotificationAsRead(notificationId);
+      toast.show({
+        title: "Notification dismissed",
+        duration: 2000,
+        placement: "top",
+        bg: "success.500",
+      });
+    } catch (error) {
+      console.error("Error dismissing notification:", error);
+      toast.show({
+        title: "Failed to dismiss notification",
+        duration: 3000,
+        placement: "top",
+        bg: "error.500",
+      });
+    }
+  };
 
   /**
    * Calculate child's age from date of birth
@@ -349,6 +415,64 @@ export default function ParentHome({
               </Box>
             </HStack>
           </VStack>
+
+          {/* Notifications Section */}
+          {notifications.length > 0 && (
+            <VStack space={3} mt={2}>
+              <HStack justifyContent="space-between" alignItems="center">
+                <HStack space={2} alignItems="center">
+                  <Ionicons name="notifications" size={20} color="#EF4444" />
+                  <Heading color="gray.800" size="sm" fontWeight="600">
+                    Alerts
+                  </Heading>
+                </HStack>
+                <Badge bg="error.500" px={3} py={1} rounded="full">
+                  <Text color="white" fontSize="xs" fontWeight="600">
+                    {notifications.length}
+                  </Text>
+                </Badge>
+              </HStack>
+
+              {/* Notifications List */}
+              <VStack space={3}>
+                {notifications.map((notification) => (
+                  <AppCard key={notification.id}>
+                    <HStack justifyContent="space-between" alignItems="flex-start" space={2}>
+                      <HStack flex={1} space={3} alignItems="flex-start">
+                        <Box
+                          bg="error.100"
+                          rounded="full"
+                          p={2}
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <Ionicons name="alert-circle" size={24} color="#EF4444" />
+                        </Box>
+                        <VStack flex={1} space={1}>
+                          <Text color="gray.800" fontSize="md" fontWeight="600">
+                            {notification.title}
+                          </Text>
+                          <Text color="gray.600" fontSize="sm">
+                            {notification.message}
+                          </Text>
+                          <Text color="gray.400" fontSize="xs" mt={1}>
+                            {formatDate(notification.timestamp)}
+                          </Text>
+                        </VStack>
+                      </HStack>
+                      <IconButton
+                        icon={<Ionicons name="close" size={20} color="#9CA3AF" />}
+                        onPress={() => handleDismissNotification(notification.id)}
+                        variant="ghost"
+                        size="sm"
+                        _pressed={{ bg: "gray.100" }}
+                      />
+                    </HStack>
+                  </AppCard>
+                ))}
+              </VStack>
+            </VStack>
+          )}
 
           {/* Announcements Section */}
           <VStack space={3} mt={2}>

@@ -15,10 +15,11 @@ import {
   Icon,
 } from "native-base";
 import { BackHandler } from "react-native";
-import { collection, getDocs, doc, setDoc, Timestamp } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { AppCard } from "../components/shared";
+import { markAttendance as markAttendanceService } from "../services/attendance";
 
 // Type definition for a child record
 type Child = {
@@ -125,7 +126,7 @@ export default function AttendanceScreen({ onBack, userId }: AttendanceScreenPro
 
   /**
    * Marks attendance for a specific child
-   * Updates both Firestore and local state
+   * Updates local state only - actual save happens on Submit
    * @param childId - The ID of the child
    * @param status - The attendance status (present/absent)
    */
@@ -145,33 +146,16 @@ export default function AttendanceScreen({ onBack, userId }: AttendanceScreenPro
       newRecords.set(childId, updatedRecord);
       setAttendanceRecords(newRecords);
 
-      // Save to Firestore
-      const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
-      const attendanceRef = doc(db, "attendance", `${childId}_${today}`);
-
-      await setDoc(
-        attendanceRef,
-        {
-          childId,
-          childName: currentRecord.childName,
-          status,
-          timestamp: Timestamp.fromDate(updatedRecord.timestamp),
-          date: today,
-          markedBy: userId || "unknown",
-        },
-        { merge: true }
-      );
-
-      console.log(`Attendance marked for ${currentRecord.childName}: ${status}`);
+      console.log(`Local attendance updated for ${currentRecord.childName}: ${status}`);
     } catch (error) {
-      console.error("Error marking attendance:", error);
-      alert("Failed to mark attendance");
+      console.error("Error updating attendance:", error);
+      alert("Failed to update attendance");
     }
   };
 
   /**
    * Handles the Submit Attendance button press
-   * In production, this would finalize and lock the attendance
+   * Saves all attendance records to Firestore and sends notifications
    */
   const handleSubmitAttendance = async () => {
     try {
@@ -181,12 +165,33 @@ export default function AttendanceScreen({ onBack, userId }: AttendanceScreenPro
       let presentCount = 0;
       let absentCount = 0;
       
+      const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
+      
+      // Save each attendance record to Firestore
+      const savePromises: Promise<void>[] = [];
+      
       attendanceRecords.forEach((record) => {
         if (record.status === "present") presentCount++;
         else absentCount++;
+        
+        // Save to Firestore and send notification if absent
+        const savePromise = markAttendanceService(
+          record.childId,
+          record.status,
+          today,
+          userId || "unknown",
+          record.childName
+        );
+        
+        savePromises.push(savePromise);
       });
+      
+      // Wait for all saves to complete
+      console.log(`⏳ Waiting for ${savePromises.length} attendance records to save...`);
+      await Promise.all(savePromises);
+      console.log(`✅ All attendance records saved successfully`);
 
-      // Log summary for now (can be replaced with actual submission logic)
+      // Log summary
       console.log("=== ATTENDANCE SUMMARY ===");
       console.log(`Total Children: ${attendanceRecords.size}`);
       console.log(`Present: ${presentCount}`);
@@ -228,8 +233,8 @@ export default function AttendanceScreen({ onBack, userId }: AttendanceScreenPro
     return (
       <Box key={child.id} mb={2}>
         {/* Attendance Card */}
-        <Pressable>
-          <AppCard>
+        <AppCard>
+          <Pressable>
             <HStack justifyContent="space-between" alignItems="center">
               {/* Left: Child Information */}
               <VStack flex={1} mr={4}>
@@ -287,8 +292,8 @@ export default function AttendanceScreen({ onBack, userId }: AttendanceScreenPro
                 )}
               </VStack>
             </HStack>
-          </AppCard>
-        </Pressable>
+          </Pressable>
+        </AppCard>
       </Box>
     );
   };
